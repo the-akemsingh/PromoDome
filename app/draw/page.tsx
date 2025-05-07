@@ -6,6 +6,7 @@ import { multiShuffle } from '@/lib/shuffle'
 import MultipleDice from '@/components/MultipleDice'
 import EntryList from '@/components/EntryList'
 import EntryTable from '@/components/EntryTable'
+import { addDraw } from '@/app/actions/addDraw'
 
 const Draw = () => {
     const [promoTitle, setPromoTitle] = useState<string>('')
@@ -28,6 +29,7 @@ const Draw = () => {
     const [useManualRounds, setUseManualRounds] = useState<boolean>(false)
     const [originalEntries, setOriginalEntries] = useState<{ id: number, entry: string }[]>([])
     const [showInitialEntries, setShowInitialEntries] = useState<boolean>(false)
+    const [saveStatus, setSaveStatus] = useState<string | null>(null)
 
     // Calculate valid entries count
     const validEntriesCount = entries.filter(entry => entry.trim()).length
@@ -169,6 +171,40 @@ const Draw = () => {
                     setWinner(selectedWinners[0]); // Keep first winner in single winner state for compatibility
                 }
             }
+            
+            // Save the draw results to the database
+            if (currentShuffled.length > 0 && promoTitle.trim()) {
+                saveDrawToDB(currentShuffled);
+            }
+        }
+    };
+
+    // Function to save draw results to the database
+    const saveDrawToDB = async (shuffledResults: string[]) => {
+        try {
+            setSaveStatus("Saving results...");
+            
+            // Get winners from the shuffled results
+            const winnerEntries = shuffledResults.slice(0, numWinners);
+            
+            const result = await addDraw({
+                promoTitle: promoTitle.trim(),
+                entries: shuffledResults,
+                numRounds: diceResult || 0,
+                shuffleCount: 3, // Using 3 from multiShuffle
+                usingQuantum,
+                winners: winnerEntries
+            });
+            
+            if (result.success) {
+                setSaveStatus("Results saved successfully");
+                setTimeout(() => setSaveStatus(null), 3000);
+            } else {
+                setSaveStatus(`Error: ${result.error}`);
+            }
+        } catch (error) {
+            console.error("Error saving draw:", error);
+            setSaveStatus("Failed to save results");
         }
     };
 
@@ -187,10 +223,11 @@ const Draw = () => {
         setUsingQuantum(true)
         setManualRounds('')
         setShowInitialEntries(false)
+        setSaveStatus(null)
     }
 
     return (
-        <div className="min-h-screen w-full flex flex-col bg-black justify-center items-center text-white py-6 md:py-10 lg:py-16 px-4 md:px-8">
+        <div className="min-h-screen w-full flex flex-col bg-black justify-center items-center text-white py-10 md:py-12 lg:py-16 px-4 md:px-8">
             <motion.div
                 className="w-full max-w-6xl"
                 initial={{ opacity: 0, y: 20 }}
@@ -611,6 +648,20 @@ const Draw = () => {
                     )}
                 </AnimatePresence>
             </motion.div>
+
+            {/* Add save status notification */}
+            <AnimatePresence>
+                {saveStatus && (
+                    <motion.div
+                        className={`fixed bottom-4 right-4 px-4 py-2 rounded-md ${saveStatus.includes('Error') ? 'bg-red-800' : saveStatus.includes('saved') ? 'bg-green-800' : 'bg-yellow-800'} text-white`}
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                    >
+                        {saveStatus}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
