@@ -1,5 +1,6 @@
 "use server"
 import prisma from "@/prismaClient"
+import { v4 as uuidv4 } from 'uuid'
 
 interface AddDrawParams {
   promoTitle: string;
@@ -51,24 +52,28 @@ export async function addDraw({
       })
     );
 
+    // Generate verification code
+    const verificationCode = uuidv4();
+
     // Create the draw record
     const draw = await prisma.draw.create({
       data: {
         promoId: promo.id,
         numRounds,
         shuffleCount,
-        usingQuantum
+        usingQuantum,
+        verificationCode
       }
     });
 
     // Find the winning entries
-    const winnerEntities = entryRecords.filter((entry:any) => 
+    const winnerEntities = entryRecords.filter(entry => 
       winners.includes(entry.name)
     );
 
     // Create winner records with rankings
     await Promise.all(
-      winnerEntities.map(async (entry:any, index:any) => {
+      winnerEntities.map(async (entry, index) => {
         return prisma.winner.create({
           data: {
             drawId: draw.id,
@@ -79,9 +84,16 @@ export async function addDraw({
       })
     );
 
-    return { success: true, drawId: draw.id };
-  } catch (error:any) {
+    return { 
+      success: true, 
+      drawId: draw.id,
+      verificationCode: draw.verificationCode 
+    };
+  } catch (error) {
     console.error("Error saving draw:", error);
-    return { success: false, error: error.message };
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    };
   }
 }

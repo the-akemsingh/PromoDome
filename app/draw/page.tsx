@@ -30,6 +30,8 @@ const Draw = () => {
     const [originalEntries, setOriginalEntries] = useState<{ id: number, entry: string }[]>([])
     const [showInitialEntries, setShowInitialEntries] = useState<boolean>(false)
     const [saveStatus, setSaveStatus] = useState<string | null>(null)
+    const [verificationCode, setVerificationCode] = useState<string | null>(null)
+    const [copied, setCopied] = useState<boolean>(false)
 
     // Calculate valid entries count
     const validEntriesCount = entries.filter(entry => entry.trim()).length
@@ -191,12 +193,13 @@ const Draw = () => {
                 promoTitle: promoTitle.trim(),
                 entries: shuffledResults,
                 numRounds: diceResult || 0,
-                shuffleCount: 3, // Using 3 from multiShuffle
+                shuffleCount: 3,
                 usingQuantum,
                 winners: winnerEntries
             });
             
             if (result.success) {
+                setVerificationCode(result.verificationCode!);
                 setSaveStatus("Results saved successfully");
                 setTimeout(() => setSaveStatus(null), 3000);
             } else {
@@ -224,6 +227,8 @@ const Draw = () => {
         setManualRounds('')
         setShowInitialEntries(false)
         setSaveStatus(null)
+        setVerificationCode(null)
+        setCopied(false)
     }
 
     return (
@@ -662,6 +667,35 @@ const Draw = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {verificationCode && (
+                <motion.div 
+                    className="mt-6 p-4 bg-gray-800 rounded-lg border border-yellow-700/30"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                >
+                    <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-300">Verification Code:</div>
+                        <div className="flex items-center gap-2">
+                            <span className="font-mono text-yellow-500">{verificationCode}</span>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(verificationCode);
+                                    setCopied(true);
+                                    setTimeout(() => setCopied(false), 2000);
+                                }}
+                                className="p-1 bg-gray-700 rounded hover:bg-gray-600"
+                            >
+                                {copied ? "Copied!" : "Copy"}
+                            </button>
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                        Share this code to verify draw results.
+                    </p>
+                </motion.div>
+            )}
         </div>
     );
 };

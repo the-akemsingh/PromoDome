@@ -17,14 +17,18 @@ interface Draw {
   shuffleCount: number
   usingQuantum: boolean
   createdAt: Date
+  verificationCode: string
   promo: { name: string }
   winners: Winner[]
 }
 
 const Results = () => {
   const [draws, setDraws] = useState<Draw[]>([])
+  const [filteredDraws, setFilteredDraws] = useState<Draw[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [copied, setCopied] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchDraws = async () => {
@@ -37,6 +41,7 @@ const Results = () => {
         
         const data = await response.json()
         setDraws(data)
+        setFilteredDraws(data)
       } catch (err) {
         console.error('Error fetching draws:', err)
         setError('Failed to load results. Please try again later.')
@@ -48,8 +53,26 @@ const Results = () => {
     fetchDraws()
   }, [])
 
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = draws.filter(draw => 
+        draw.verificationCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        draw.promo.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      setFilteredDraws(filtered)
+    } else {
+      setFilteredDraws(draws)
+    }
+  }, [searchTerm, draws])
+
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleString()
+  }
+
+  const handleCopy = (code: string) => {
+    navigator.clipboard.writeText(code)
+    setCopied(code)
+    setTimeout(() => setCopied(null), 2000)
   }
 
   return (
@@ -60,7 +83,7 @@ const Results = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <motion.h1 
             className="text-3xl md:text-4xl font-bold cal-sans-regular"
             initial={{ x: -20, opacity: 0 }}
@@ -69,15 +92,38 @@ const Results = () => {
           >
             Draw Results
           </motion.h1>
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            <Link href="/draw" className="bg-yellow-600 hover:bg-yellow-700 text-black px-4 py-2 rounded-md font-medium">
-              New Draw
-            </Link>
-          </motion.div>
+          
+          <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+            <motion.div 
+              className="relative w-full md:w-64"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                placeholder="Search by code or name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full bg-gray-800 border border-gray-700 rounded-md text-white focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600"
+              />
+            </motion.div>
+            
+            <motion.div
+              initial={{ x: 20, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              <Link href="/draw" className="inline-block w-full md:w-auto text-center bg-yellow-600 hover:bg-yellow-700 text-black px-4 py-2 rounded-md font-medium">
+                New Draw
+              </Link>
+            </motion.div>
+          </div>
         </div>
 
         {loading ? (
@@ -86,19 +132,25 @@ const Results = () => {
           </div>
         ) : error ? (
           <div className="text-red-500 text-center py-8">{error}</div>
-        ) : draws.length === 0 ? (
+        ) : filteredDraws.length === 0 ? (
           <div className="text-center py-12 bg-gray-900/50 rounded-xl border border-gray-800">
-            <p className="text-gray-400 text-lg">No draws have been performed yet.</p>
-            <Link 
-              href="/draw" 
-              className="mt-4 inline-block bg-yellow-600 hover:bg-yellow-700 text-black px-4 py-2 rounded-md font-medium"
-            >
-              Create Your First Draw
-            </Link>
+            {searchTerm ? (
+              <p className="text-gray-400 text-lg">No draws found matching "{searchTerm}"</p>
+            ) : (
+              <>
+                <p className="text-gray-400 text-lg">No draws have been performed yet.</p>
+                <Link 
+                  href="/draw" 
+                  className="mt-4 inline-block bg-yellow-600 hover:bg-yellow-700 text-black px-4 py-2 rounded-md font-medium"
+                >
+                  Create Your First Draw
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-8">
-            {draws.map((draw) => (
+            {filteredDraws.map((draw) => (
               <motion.div 
                 key={draw.id}
                 className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden"
@@ -116,6 +168,22 @@ const Results = () => {
                       <p className="text-sm text-gray-400 mt-1">
                         Created: {formatDate(draw.createdAt)}
                       </p>
+                      
+                      {/* Verification Code */}
+                      {draw.verificationCode && (
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-gray-400">Verification:</span>
+                          <code className="text-xs bg-gray-800 px-2 py-1 rounded font-mono text-yellow-500">
+                            {draw.verificationCode}
+                          </code>
+                          <button
+                            onClick={() => handleCopy(draw.verificationCode)}
+                            className="text-xs px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-300"
+                          >
+                            {copied === draw.verificationCode ? "Copied!" : "Copy"}
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2 items-center">
                       <span className="px-2 py-1 bg-gray-800 rounded-md text-xs">

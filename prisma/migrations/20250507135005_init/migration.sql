@@ -26,6 +26,7 @@ CREATE TABLE "Draw" (
     "shuffleCount" INTEGER NOT NULL,
     "usingQuantum" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "verificationCode" TEXT,
 
     CONSTRAINT "Draw_pkey" PRIMARY KEY ("id")
 );

@@ -29,19 +29,20 @@ model Entry {
   promoId   String
   promo     Promo    @relation(fields: [promoId], references: [id])
   winners   Winner[]
-  
+
   @@unique([promoId, name])
 }
 
 model Draw {
-  id           String    @id @default(uuid())
-  promoId      String
-  promo        Promo     @relation(fields: [promoId], references: [id])
-  numRounds    Int
-  shuffleCount Int
-  usingQuantum Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  winners      Winner[]
+  id               String   @id @default(uuid())
+  promoId          String
+  promo            Promo    @relation(fields: [promoId], references: [id])
+  numRounds        Int
+  shuffleCount     Int
+  usingQuantum     Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  winners          Winner[]
+  verificationCode String?
 }
 
 model Winner {
