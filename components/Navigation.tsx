@@ -24,7 +24,7 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-xl md:text-2xl flex text-white font-bold cal-sans-regular">
+              <span className="text- md:text-2xl flex text-white font-bold cal-sans-regular">
                 <img
                   src="/logo.svg"
                   alt="PromoDome Logo"
@@ -43,7 +43,7 @@ const Navigation = () => {
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+                  className={`px-2 py-2 rounded-md text-sm font-medium transition-colors ${isActive
                       ? 'text-yellow-500 bg-gray-900'
                       : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}
