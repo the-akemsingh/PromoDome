@@ -670,59 +670,38 @@ const Draw = () => {
                 </div>
 
                 <div className="mt-8 border-t border-gray-200 pt-6">
-                    {/* <div className="timestamp text-xs text-right mb-4 text-gray-500">
-                        {new Date().toLocaleString()}
-                    </div> */}
-
-                    <div className="flex gap-10 justify-center items-center ">
-                        {/* <motion.button
-                            className="shadow-[0_0_0_3px_#ffffff_inset] px-6 py-4 bg-yellow-500 border border-yellow-600 text-black rounded-lg font-bold transform hover:-translate-y-1 transition duration-400 cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
-                            onClick={startPromo}
-                            disabled={promoStarted || !diceResult || validEntriesCount < 2}
+                    <div className="flex flex-wrap gap-4 md:gap-10 justify-center items-center">
+                        <div className="relative">
+                            <img src="/start-button.svg" alt="Start Promo" width={160} height={80} className="w-32 md:w-40 lg:w-48" />
+                            <div style={{ fontFamily: 'CostaRica' }} onClick={startPromo} className="absolute inset-0 flex items-center justify-center text-sm md:text-lg lg:text-xl font-bold cursor-pointer">
+                                Start Promo
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <img
+                                src="/logo.svg"
+                                alt="PromoDome Logo"
+                                className="w-8 h-6 md:w-12 md:h-8 lg:w-16 lg:h-12"
+                            />
+                        </div>
+                        
+                        <motion.button
+                            className="shadow-[0_0_0_3px_#ffffff_inset] px-4 md:px-6 py-2 md:py-4 text-black rounded-lg font-bold transform hover:-translate-y-1 transition duration-400 cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
+                            onClick={cancelPromo}
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
                             initial={{ y: 20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.6, duration: 0.4 }}
                         >
-                            <span className="relative z-10 text-lg sm:text-xl font-bold">
-                                Start Promo
-                            </span>
-                        </motion.button> */}
-                        <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-
-                            <div className="relative">
-                                <img src="/start-button.svg" alt="Start Promo" width={200} height={100} />
-                                <div style={{ fontFamily: 'CostaRica' }} onClick={startPromo} className="absolute inset-0 flex items-center justify-center text-lg sm:text-xl font-bold cursor-pointer">
-                                    Start Promo
-                                </div>
-                            </div>
-                        </div>
-                        <div className="hidden lg:block">
-                            <img
-                                src="/logo.svg"
-                                alt="PromoDome Logo"
-                                className="w-12 h-8 md:w-16 md:h-12 mr-2"
-                            />
-                        </div>
-                        <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-                            <motion.button
-                                className="shadow-[0_0_0_3px_#ffffff_inset] px-6 py-4  text-black rounded-lg font-bold transform hover:-translate-y-1  transition duration-400 cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
-                                onClick={cancelPromo}
-                                whileHover={{ scale: 1.03 }}
-                                whileTap={{ scale: 0.97 }}
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.6, duration: 0.4 }}
+                            <span
+                                style={{ fontFamily: 'CostaRica', boxShadow: '0 0 0 3px #fff, 0 0 0 6px #f87171' }}
+                                className="relative bg-red-400 py-1 md:py-1.5 px-6 md:px-10 rounded-lg z-10 text-sm md:text-base lg:text-lg font-bold ring-2 ring-white ring-offset-1 ring-offset-red-400"
                             >
-                                <span
-                                    style={{ fontFamily: 'CostaRica', boxShadow: '0 0 0 3px #fff, 0 0 0 6px #f87171' }}
-                                    className="relative bg-red-400 py-1.5 px-10 rounded-lg z-10 text-base sm:text-lg font-bold ring-2 ring-white ring-offset-1 ring-offset-red-400"
-                                >
-                                    Reset
-                                </span>
-                            </motion.button>
-                        </div>
+                                Reset
+                            </span>
+                        </motion.button>
                     </div>
                 </div>
 
