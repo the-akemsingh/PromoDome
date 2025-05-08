@@ -702,7 +702,7 @@ const Draw = () => {
                             <img
                                 src="/logo.svg"
                                 alt="PromoDome Logo"
-                                className="w-16 h-12 md:w-24 md:h-16 mr-2"
+                                className="w-12 h-8 md:w-16 md:h-12 mr-2"
                             />
                         </div>
                         <div className='flex flex-col sm:flex-row gap-4 justify-center'>
