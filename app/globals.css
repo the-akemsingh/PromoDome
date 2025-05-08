@@ -1,9 +1,76 @@
 @import "tailwindcss";
 
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+  --primary: #ff0000;
+  --secondary: #f8cb51;
+  --accent: #ffcc00;
+  --card-bg: #f8f8f8;
+  --border-color: #e5e5e5;
+}
+
+.dark {
+  --background: #121212;
+  --foreground: #ffffff;
+  --primary: #d10000;
+  --secondary: #eab948;
+  --accent: #ffd700;
+  --card-bg: #222222;
+  --border-color: #444444;
+}
+
+/* Apply theme variables */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark .bg-white {
+  background-color: var(--card-bg);
+}
+
+.dark .bg-black {
+  background-color: #1a1a1a;
+}
+
+.dark .border-gray-200, .dark .border-gray-300 {
+  border-color: var(--border-color);
+}
+
+.dark .text-black {
+  color: var(--foreground);
+}
+
+.dark .bg-gray-100, .dark .bg-gray-50 {
+  background-color: #2a2a2a;
+}
+
+.dark .text-gray-500, .dark .text-gray-600, .dark .text-gray-800 {
+  color: #cbcbcb;
+}
+
+.dark .bg-gray-200, .dark .bg-gray-300 {
+  background-color: #333333;
+}
 
 @font-face {
   font-family: 'CostaRica';
   src: url('../font/CostaRica.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'QuiveraRegular';
+  src: url('../font/QuiveraRegular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'ATCtimberlime';
+  src: url('../font/atc_timberlime.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
 }

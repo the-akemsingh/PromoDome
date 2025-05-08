@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Montserrat,Yellowtail } from 'next/font/google';
+import { Montserrat,Yellowtail  } from 'next/font/google';
 import Navigation from '@/components/Navigation';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -32,10 +33,12 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${yellowtail.variable} antialiased min-h-screen`}
       >
-        <Navigation />
-        <div className="pt-16">
-          {children}
-        </div>
+        <ThemeProvider>
+          <Navigation />
+          <div className="pt-16">
+            {children}
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

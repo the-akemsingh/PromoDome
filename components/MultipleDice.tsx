@@ -111,7 +111,7 @@ const MultipleDice = ({ isRolling, onRollComplete, diceCount }: MultipleDiceProp
 
 
   return (
-    <div className="dice-container" style={{ border: '1px solid yellow', minHeight: '100px', padding: '20px' }}>
+    <div className="dice-container" style={{ border: '1px solid gray', minHeight: '100px', padding: '20px' }}>
       {/* Debug controls */}
       {/* <div className="flex gap-2 mb-4">
         <button 

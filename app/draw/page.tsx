@@ -7,8 +7,10 @@ import MultipleDice from '@/components/MultipleDice'
 import EntryList from '@/components/EntryList'
 import EntryTable from '@/components/EntryTable'
 import { addDraw } from '@/app/actions/addDraw'
+import { useTheme } from '@/context/ThemeContext'
 
 const Draw = () => {
+    const { theme } = useTheme()
     const [promoTitle, setPromoTitle] = useState<string>('')
     const [entries, setEntries] = useState<string[]>([''])
     const [numRounds, setNumRounds] = useState<number>(0)
@@ -253,7 +255,7 @@ const Draw = () => {
     }
 
     return (
-        <div className="min-h-screen w-full flex flex-col bg-white justify-center items-center text-black py-10 md:py-12 lg:py-16 px-4 md:px-8">
+        <div className="min-h-screen w-full flex flex-col bg-white dark:bg-white justify-center items-center text-black dark:text-white py-10 md:py-12 lg:py-16 px-4 md:px-8">
             <motion.div
                 className="w-full max-w-6xl"
                 initial={{ opacity: 0, y: 20 }}
@@ -262,20 +264,22 @@ const Draw = () => {
             >
                 <div className="text-center flex flex-col items-center mb-8 md:mb-12">
                     <motion.h1
-                        className="text-4xl md:text-6xl lg:text-7xl font-extrabold cal-sans-regular mb-2 text-red-400"
+                        className="text-4xl md:text-6xl lg:text-7xl font-extrabold cal-sans-regular mb-2 text-red-400 dark:text-red-500"
                         initial={{ y: -50, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.2, duration: 0.7, type: "spring", stiffness: 120 }}
+                        style={{ fontFamily: 'ATCtimberlime' }}
                     >
                         PROMO
                     </motion.h1>
                     <motion.h1
-                        className="text-xl md:text-3xl lg:text-4xl font-extrabold cal-sans-regular mb-2 text-red-400"
+                        className="text-xl md:text-3xl lg:text-4xl font-extrabold cal-sans-regular mb-2 text-red-400 dark:text-red-500"
                         initial={{ y: -50, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
+                        style={{ fontFamily: 'QuiveraRegular', letterSpacing: '0.2em' }}
                         transition={{ delay: 0.2, duration: 0.7, type: "spring", stiffness: 120 }}
                     >
-                        DOME
+                        D O M E
                     </motion.h1>
                 </div>
 
@@ -294,7 +298,7 @@ const Draw = () => {
 
 
                                 <div className="flex max-h-14 lg:min-w-xl items-center p-2 rounded">
-                                    <div className="font-medium text-gray-900  bg-gray-300 py-1 w-24 pl-2">Promo Title</div>
+                                    <div className="font-medium text-black  dark:text-black bg-gray-300 py-1 w-24 pl-2">Promo Title</div>
                                     <div className="flex-grow">
                                         <input
                                             type="text"
@@ -308,7 +312,7 @@ const Draw = () => {
                                     </div>
                                 </div>
                                 <div className="flex max-h-14 lg:min-w-xl items-center  p-2 ">
-                                    <div className="font-medium min-w-40 text-gray-900  bg-gray-300 py-1 w-24 pl-2">Number of Winners</div>
+                                    <div className="font-medium min-w-40 text-black dark:text-black bg-gray-300 py-1 w-24 pl-2">Number of Winners</div>
                                     <div className="flex-grow">
                                         <input
                                             type="number"
@@ -335,39 +339,6 @@ const Draw = () => {
                                     </div>
                                 </div>
 
-                                {/* Winners selector */}
-                                {/* <motion.div
-                                    className="winners-selector bg-gray-50 rounded-xl p-2 border border-gray-200"
-                                    whileHover={{ scale: 1.01 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <h3 className="text-sm md:text-base font-medium text-gray-800 mb-3">Winner Settings</h3>
-                                    <div className="flex items-center gap-2">
-                                        <label className="text-xs md:text-sm text-gray-600">Number of Winners:</label>
-                                        <input
-                                            type="number"
-                                            value={numWinners === 0 ? "" : numWinners}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                if (val === "") {
-                                                    setNumWinners(0);
-                                                } else {
-                                                    const parsed = parseInt(val);
-                                                    if (!isNaN(parsed)) {
-                                                        setNumWinners(parsed);
-                                                    }
-                                                }
-                                            }}
-                                            onBlur={() => {
-                                                if (!numWinners || numWinners <= 0) {
-                                                    setNumWinners(1);
-                                                }
-                                            }}
-                                            disabled={promoStarted}
-                                            className="w-16 text-xs md:text-sm px-2 py-1 bg-gray-100 border border-gray-300 text-black rounded focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600"
-                                        />
-                                    </div>
-                                </motion.div> */}
                             </div>
 
                             {/* Dice Section */}
@@ -503,7 +474,6 @@ const Draw = () => {
                         </motion.div>
                     </motion.div>
 
-                    {/* Right column */}
                     <motion.div
                         className="flex flex-col"
                         initial={{ opacity: 0, x: 20 }}
