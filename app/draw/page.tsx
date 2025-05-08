@@ -728,6 +728,13 @@ const Draw = () => {
                                 </div>
                             </div>
                         </div>
+                        <div className="hidden lg:block">
+                            <img
+                                src="/logo.svg"
+                                alt="PromoDome Logo"
+                                className="w-16 h-12 md:w-24 md:h-16 mr-2"
+                            />
+                        </div>
                         <div className='flex flex-col sm:flex-row gap-4 justify-center'>
                             <motion.button
                                 className="shadow-[0_0_0_3px_#ffffff_inset] px-6 py-4  text-black rounded-lg font-bold transform hover:-translate-y-1  transition duration-400 cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
@@ -739,8 +746,8 @@ const Draw = () => {
                                 transition={{ delay: 0.6, duration: 0.4 }}
                             >
                                 <span
-                                    style={{ fontFamily: 'CostaRica', boxShadow: '0 0 0 4px #fff, 0 0 0 8px #f87171' }}
-                                    className="relative bg-red-400 py-2 px-14 rounded-lg z-10 text-lg sm:text-xl font-bold ring-2 ring-white ring-offset-1 ring-offset-red-400"
+                                    style={{ fontFamily: 'CostaRica', boxShadow: '0 0 0 3px #fff, 0 0 0 6px #f87171' }}
+                                    className="relative bg-red-400 py-1.5 px-10 rounded-lg z-10 text-base sm:text-lg font-bold ring-2 ring-white ring-offset-1 ring-offset-red-400"
                                 >
                                     Reset
                                 </span>
