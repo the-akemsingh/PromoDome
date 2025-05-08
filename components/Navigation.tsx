@@ -40,9 +40,9 @@ const Navigation = () => {
               const isActive = pathname === item.path
 
               return (
-                <Link
+                <span
                   key={item.path}
-                  href={item.path}
+                  onClick={() => window.location.href = item.path}
                   className={`px-2 py-2 rounded-md text-sm font-medium transition-colors ${isActive
                       ? 'text-yellow-500 bg-gray-900'
                       : 'text-gray-300 hover:text-white hover:bg-gray-800'
@@ -60,7 +60,7 @@ const Navigation = () => {
                       />
                     )}
                   </span>
-                </Link>
+                </span>
               )
             })}
           </div>
