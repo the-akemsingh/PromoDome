@@ -34,15 +34,16 @@ model Entry {
 }
 
 model Draw {
-  id               String   @id @default(uuid())
+  id               String             @id @default(uuid())
   promoId          String
-  promo            Promo    @relation(fields: [promoId], references: [id])
+  promo            Promo              @relation(fields: [promoId], references: [id])
   numRounds        Int
   shuffleCount     Int
-  usingQuantum     Boolean  @default(true)
-  createdAt        DateTime @default(now())
+  usingQuantum     Boolean            @default(true)
+  createdAt        DateTime           @default(now())
   winners          Winner[]
   verificationCode String?
+  iterations       ShuffleIteration[]
 }
 
 model Winner {
@@ -52,5 +53,14 @@ model Winner {
   entryId   String
   entry     Entry    @relation(fields: [entryId], references: [id])
   rank      Int      @default(1)
+  createdAt DateTime @default(now())
+}
+
+model ShuffleIteration {
+  id        String   @id @default(uuid())
+  drawId    String
+  draw      Draw     @relation(fields: [drawId], references: [id])
+  iteration Int
+  entries   String[]
   createdAt DateTime @default(now())
 }

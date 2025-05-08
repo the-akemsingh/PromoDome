@@ -34,7 +34,7 @@ const HowItWorks = () => {
                 <motion.div
                     className="text-center mb-8 md:mb-16"
                 >
-                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 bg-clip-text cal-sans-regular text-white">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 md:mb-4 bg-clip-text cal-sans-regular ">
                         How It Works
                     </h2>
                     <div className="w-16 md:w-20 h-1 bg-yellow-600 mx-auto"></div>
@@ -58,14 +58,14 @@ const HowItWorks = () => {
                                 >
                                     {step.icon}
                                 </motion.div>
-                                <div className="absolute -top-3 -right-3 w-6 h-6 md:w-8 md:h-8 bg-black text-white rounded-full flex items-center justify-center text-xs md:text-sm font-bold border-2 border-yellow-600">
+                                <div className="absolute -top-3 -right-3 w-6 h-6 md:w-8 md:h-8 bg-black rounded-full flex items-center justify-center text-xs md:text-sm font-bold border-2 border-yellow-600">
                                     {step.number}
                                 </div>
                             </div>
-                            <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 text-white group-hover:text-yellow-400 transition-colors">
+                            <h3 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 group-hover:text-yellow-400 transition-colors">
                                 {step.title}
                             </h3>
-                            <p className="text-sm md:text-base text-gray-300">
+                            <p className="text-sm md:text-base text-gray-600">
                                 {step.description}
                             </p>
                         </motion.div>
@@ -75,7 +75,7 @@ const HowItWorks = () => {
                 <motion.div
                     className="flex justify-center"
                 >
-                    <button className="shadow-[0_0_0_3px_#000000_inset] px-4 sm:px-6 py-2 bg-transparent border border-black dark:border-white dark:text-white text-black rounded-lg font-bold transform hover:-translate-y-1 transition cursor-pointer duration-400"
+                    <button className="shadow-[0_0_0_3px_#000000_inset] px-4 sm:px-6 py-2 bg-transparent border border-black text-black rounded-lg font-bold transform hover:-translate-y-1 transition cursor-pointer duration-400"
                         onClick={() => window.location.href = "/draw"}
                     >
                         Start Drawing Winners Now

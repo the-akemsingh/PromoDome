@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 
+@font-face {
+  font-family: 'CostaRica';
+  src: url('../font/CostaRica.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
 .montserrat-300 {
     font-family: "Montserrat", sans-serif;
     font-optical-sizing: auto;
@@ -91,7 +99,7 @@
   height: 70px;
   border: 2px solid #333;
   border-radius: 10px;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: #ff0000;
   display: grid;
   grid-template-areas:
     "tl . tr"
@@ -100,7 +108,7 @@
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: 1fr 1fr 1fr;
   padding: 8px;
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
   backface-visibility: hidden;
 }
 
@@ -122,17 +130,17 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: #111;
+  background-color: #ffffff;
   align-self: center;
   justify-self: center;
-  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.dice:hover .dot {
+/* .dice:hover .dot {
   background-color: #4361ee;
   box-shadow: 0 0 5px #4361ee;
-}
+} */
 
 .center {
   grid-area: c;
@@ -249,13 +257,13 @@
 }
 
 .debug-dice .dice-face {
-  border: 2px solid red !important;
-  background-color: white !important;
+  border: 2px solid #333 !important;
+  background-color: #ff0000 !important;
   opacity: 1 !important;
 }
 
 .debug-dice .dot {
-  background-color: black !important;
+  background-color: #ffffff !important;
   width: 12px !important;
   height: 12px !important;
 }

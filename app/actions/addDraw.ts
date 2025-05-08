@@ -2,6 +2,11 @@
 import prisma from "@/prismaClient"
 import { v4 as uuidv4 } from 'uuid'
 
+interface ShuffleIteration {
+  iteration: number;
+  entries: string[];
+}
+
 interface AddDrawParams {
   promoTitle: string;
   entries: string[];
@@ -9,6 +14,7 @@ interface AddDrawParams {
   shuffleCount: number;
   usingQuantum: boolean;
   winners: string[];
+  iterations?: ShuffleIteration[];
 }
 
 export async function addDraw({
@@ -17,7 +23,8 @@ export async function addDraw({
   numRounds,
   shuffleCount,
   usingQuantum,
-  winners
+  winners,
+  iterations = []
 }: AddDrawParams) {
   try {
     // Create or find the promo
@@ -83,6 +90,21 @@ export async function addDraw({
         });
       })
     );
+
+    // Save shuffle iterations if provided
+    if (iterations && iterations.length > 0) {
+      await Promise.all(
+        iterations.map(async (iter) => {
+          return prisma.shuffleIteration.create({
+            data: {
+              drawId: draw.id,
+              iteration: iter.iteration,
+              entries: iter.entries
+            }
+          });
+        })
+      );
+    }
 
     return { 
       success: true, 

@@ -18,6 +18,13 @@ export async function GET() {
               }
             }
           }
+        },
+        iterations: {
+          select: {
+            id: true,
+            iteration: true,
+            entries: true
+          }
         }
       },
       orderBy: {

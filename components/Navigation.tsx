@@ -14,8 +14,8 @@ const Navigation = () => {
   ]
 
   return (
-    <motion.nav 
-      className="fixed top-0 w-full z-50 bg-black/80 backdrop-blur-sm border-b border-gray-800"
+    <motion.nav
+      className="fixed top-0 w-full z-50 bg-black backdrop-blur-sm border-b border-gray-800"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
@@ -24,25 +24,29 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <span className="text-xl font-bold cal-sans-regular text-white">
+              <span className="text-xl md:text-2xl flex text-white font-bold cal-sans-regular">
+                <img
+                  src="/logo.svg"
+                  alt="PromoDome Logo"
+                  className="w-12 h-8 md:w-16 md:h-10 mr-2"
+                />
                 Promo<span className="text-yellow-600">Dome</span>
               </span>
             </Link>
           </div>
-          
+
           <div className="flex space-x-4">
             {navItems.map(item => {
               const isActive = pathname === item.path
-              
+
               return (
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive 
-                      ? 'text-yellow-500 bg-gray-900' 
+                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive
+                      ? 'text-yellow-500 bg-gray-900'
                       : 'text-gray-300 hover:text-white hover:bg-gray-800'
-                  }`}
+                    }`}
                 >
                   <span className="relative">
                     {item.name}

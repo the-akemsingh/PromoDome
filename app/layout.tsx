@@ -30,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${montserrat.variable} ${yellowtail.variable} antialiased bg-black min-h-screen`}
+        className={`${montserrat.variable} ${yellowtail.variable} antialiased min-h-screen`}
       >
         <Navigation />
         <div className="pt-16">
