@@ -46,33 +46,17 @@ const Draw = () => {
         setShuffledEntries(entries.filter(entry => entry.trim()));
     }, [entries]);
 
-    // Helper function to add suffixes to duplicate entries
-    const addSuffixesToDuplicates = (entries: string[]): string[] => {
-        const filteredEntries = entries.filter(entry => entry.trim());
-        if (filteredEntries.length === 0) return [];
-
-        // Track counts of each entry to add appropriate suffixes
-        const entryCounts: Record<string, number> = {};
-
-        // Process each entry and add suffixes where needed
-        return filteredEntries.map(entry => {
-            if (!entryCounts[entry]) {
-                entryCounts[entry] = 1;
-                return entry; // First occurrence of this entry, no suffix needed
-            } else {
-                // This is a duplicate, add suffix with counter
-                entryCounts[entry]++;
-                return `${entry}-${entryCounts[entry]}`;
-            }
-        });
+    // Helper function to filter empty entries
+    const filterEntries = (entries: string[]): string[] => {
+        return entries.filter(entry => entry.trim());
     };
 
     const handleEntryChange = (text: string) => {
         const lines = text.split('\n');
         setEntries(lines);
 
-        // Process entries to add suffixes to duplicates
-        const processed = addSuffixesToDuplicates(lines);
+        // Just filter entries without adding suffixes
+        const processed = filterEntries(lines);
         setProcessedEntries(processed);
 
         // Store original entries with their order
@@ -126,10 +110,10 @@ const Draw = () => {
     const startPromo = async () => {
         if (!diceResult || diceResult < 1) return;
 
-        // Use processed entries with suffixes for duplicates
+        // Use processed entries without adding suffixes
         const validEntries = processedEntries.length > 0
             ? processedEntries
-            : addSuffixesToDuplicates(entries);
+            : filterEntries(entries);
 
         if (validEntries.length < 2) return;
 
@@ -179,6 +163,8 @@ const Draw = () => {
             setShuffleError("Error using quantum randomness. Fell back to standard shuffle.");
             setUsingQuantum(false);
         } finally {
+            // Ensure we set current round to the final round number for UI consistency
+            setCurrentRound(diceResult);
             setIsShuffling(false);
 
             // Set the winners (top entries after shuffling based on numWinners)
@@ -193,21 +179,30 @@ const Draw = () => {
                 }
             }
 
+            // Auto-select the final iteration for better user experience
+            setSelectedIteration(diceResult);
+            setShowIterationResults(true);
+
             // Save the draw results to the database
             if (currentShuffled.length > 0 && promoTitle.trim()) {
-                saveDrawToDB(currentShuffled);
+                const currentIterations = [...iterationResults, {
+                    iteration: diceResult,
+                    entries: [...currentShuffled]
+                }];
+                saveDrawToDB(currentShuffled, currentIterations);
             }
         }
     };
 
     // Function to save draw results to the database
-    const saveDrawToDB = async (shuffledResults: string[]) => {
+    const saveDrawToDB = async (shuffledResults: string[], currentIterationResults: { iteration: number, entries: string[] }[]) => {
         try {
             setSaveStatus("Saving results...");
 
             // Get winners from the shuffled results
             const winnerEntries = shuffledResults.slice(0, numWinners);
-
+            console.log("logging iteration results");
+            console.log(currentIterationResults);
             const result = await addDraw({
                 promoTitle: promoTitle.trim(),
                 entries: shuffledResults,
@@ -215,7 +210,7 @@ const Draw = () => {
                 shuffleCount: 3,
                 usingQuantum,
                 winners: winnerEntries,
-                iterations: iterationResults
+                iterations: currentIterationResults
             });
 
             if (result.success) {
@@ -281,6 +276,9 @@ const Draw = () => {
                     >
                         D O M E
                     </motion.h1>
+                    <div className=" text-xl md:text-3xl text-black dark:text-black" style={{ fontFamily: 'CostaRica' }}>
+                        Quantum RNG
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-6 md:gap-8">
@@ -547,7 +545,7 @@ const Draw = () => {
                                         <div className="flex justify-end items-center gap-2 mb-2 flex-wrap">
                                             <button
                                                 onClick={() => setShowInitialEntries(!showInitialEntries)}
-                                                className="text-xs flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 hover:bg-gray-200"
+                                                className="text-xs flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-300 text-black dark:text-black hover:bg-gray-200"
                                             >
                                                 <span>{showInitialEntries ? 'Hide' : 'Show'} Initial Entries</span>
                                             </button>
@@ -555,9 +553,9 @@ const Draw = () => {
                                             {iterationResults.length > 0 && (
                                                 <button
                                                     onClick={() => setShowIterationResults(!showIterationResults)}
-                                                    className="text-xs flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-300 text-gray-700 hover:bg-gray-200"
+                                                    className="text-xs flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-300 text-black dark:text-black hover:bg-gray-200"
                                                 >
-                                                    <span>{showIterationResults ? 'Hide' : 'Show'} Shuffle Iterations</span>
+                                                    <span>{showIterationResults ? 'Hide' : 'Show'} Each Round</span>
                                                 </button>
                                             )}
                                         </div>
@@ -588,7 +586,7 @@ const Draw = () => {
                                                     exit={{ opacity: 0, height: 0 }}
                                                     className="overflow-hidden bg-gray-100 p-3 rounded-lg mb-2"
                                                 >
-                                                    <h3 className="text-sm font-medium text-gray-800 mb-2">Shuffle Iterations</h3>
+                                                    <h3 className="text-sm font-medium text-gray-800 mb-2">Each Round</h3>
 
                                                     {/* Iteration selector */}
                                                     <div className="flex flex-wrap gap-2 mb-3">
@@ -596,15 +594,26 @@ const Draw = () => {
                                                             <button
                                                                 key={iter.iteration}
                                                                 onClick={() => setSelectedIteration(iter.iteration)}
-                                                                className={`px-2 py-1 text-xs rounded ${selectedIteration === iter.iteration
-                                                                    ? 'bg-yellow-500 text-black'
-                                                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                className={`px-2 py-1 text-black dark:text-black text-xs rounded ${selectedIteration === iter.iteration
+                                                                        ? 'bg-yellow-500 text-black font-medium'
+                                                                        : iter.iteration === 0
+                                                                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                            : iter.iteration === diceResult
+                                                                                ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border border-yellow-500'
+                                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                                                     }`}
                                                             >
-                                                                {iter.iteration === 0 ? 'Initial' : `Round ${iter.iteration}`}
+                                                                {iter.iteration === 0
+                                                                    ? 'Initial'
+                                                                    : iter.iteration === diceResult
+                                                                        ? `Final (Round ${iter.iteration})`
+                                                                        : `Round ${iter.iteration}`
+                                                                }
                                                             </button>
                                                         ))}
                                                     </div>
+
+
 
                                                     {/* Selected iteration results */}
                                                     {selectedIteration !== null && (
@@ -616,7 +625,13 @@ const Draw = () => {
                                                                         .map((entry, index) => ({ id: index + 1, entry })) || []
                                                                 }
                                                                 winners={winners}
-                                                                title={selectedIteration === 0 ? "Initial Order" : `After Round ${selectedIteration}`}
+                                                                title={
+                                                                    selectedIteration === 0
+                                                                        ? "Initial Order"
+                                                                        : selectedIteration === diceResult
+                                                                            ? `Final Result (Round ${selectedIteration})`
+                                                                            : `After Round ${selectedIteration}`
+                                                                }
                                                             />
                                                         </div>
                                                     )}
@@ -677,15 +692,15 @@ const Draw = () => {
                                 Start Promo
                             </div>
                         </div>
-                        
+
                         <div>
                             <img
-                                src="/logo.svg"
+                                src="/photo.svg"
                                 alt="PromoDome Logo"
                                 className="w-8 h-6 md:w-12 md:h-8 lg:w-16 lg:h-12"
                             />
                         </div>
-                        
+
                         <motion.button
                             className="shadow-[0_0_0_3px_#ffffff_inset] px-4 md:px-6 py-2 md:py-4 text-black rounded-lg font-bold transform hover:-translate-y-1 transition duration-400 cursor-pointer disabled:opacity-50 disabled:hover:translate-y-0"
                             onClick={cancelPromo}
@@ -697,7 +712,7 @@ const Draw = () => {
                         >
                             <span
                                 style={{ fontFamily: 'CostaRica', boxShadow: '0 0 0 3px #fff, 0 0 0 6px #f87171' }}
-                                className="relative bg-red-400 py-1 md:py-1.5 px-6 md:px-10 rounded-lg z-10 text-sm md:text-base lg:text-lg font-bold ring-2 ring-white ring-offset-1 ring-offset-red-400"
+                                className="relative bg-red-400 py-1 md:py-1.5 px-6 md:px-10 rounded-lg z-10 text-sm md:text-base lg:text-lg font-bold ring-2  ring-offset-1 ring-offset-red-400"
                             >
                                 Reset
                             </span>
@@ -792,7 +807,7 @@ const Draw = () => {
                                     setCopied(true);
                                     setTimeout(() => setCopied(false), 2000);
                                 }}
-                                className="p-1 bg-gray-200 rounded hover:bg-gray-300 text-gray-700"
+                                className="p-1 bg-gray-200 rounded hover:bg-gray-300 text-black dark:text-black"
                             >
                                 {copied ? "Copied!" : "Copy"}
                             </button>

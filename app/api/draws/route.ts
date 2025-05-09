@@ -32,6 +32,11 @@ export async function GET() {
       }
     })
 
+    // Log the iterations count for debugging
+    draws.forEach(draw => {
+      console.log(`Draw ${draw.id} has ${draw.iterations.length} iterations`);
+    });
+
     return NextResponse.json(draws)
   } catch (error) {
     console.error('Error fetching draws:', error)

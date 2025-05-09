@@ -51,22 +51,20 @@ const Results = () => {
                 const data = await response.json()
                 setDraws(data)
                 setFilteredDraws(data)
-                
-                // Auto-expand the first draw that has iterations
+                console.log(data)
+
+                // Auto-expand all draws that have iterations
                 if (data.length > 0) {
-                    const drawWithIterations = data.find((d: Draw) => d.iterations && d.iterations.length > 0)
-                    if (drawWithIterations) {
-                        setExpandedDraw(drawWithIterations.id)
-                        
-                        // Auto-select first iteration
-                        if (drawWithIterations.iterations.length > 0) {
-                            const firstIteration = [...drawWithIterations.iterations]
-                                .sort((a, b) => a.iteration - b.iteration)[0]
-                            setSelectedIteration({ 
-                                drawId: drawWithIterations.id, 
-                                iteration: firstIteration.iteration 
-                            })
-                        }
+                    setExpandedDraw(data[0].id) // Expand the first draw by default
+
+                    // Auto-select first iteration for first draw
+                    if (data[0].iterations && data[0].iterations.length > 0) {
+                        const firstIteration = [...data[0].iterations]
+                            .sort((a, b) => a.iteration - b.iteration)[0]
+                        setSelectedIteration({
+                            drawId: data[0].id,
+                            iteration: firstIteration.iteration
+                        })
                     }
                 }
             } catch (err) {
@@ -108,7 +106,7 @@ const Results = () => {
             setSelectedIteration(null)
         } else {
             setExpandedDraw(drawId)
-            
+
             // Automatically select the first iteration (initial state)
             const draw = draws.find(d => d.id === drawId)
             if (draw && draw.iterations && draw.iterations.length > 0) {
@@ -242,18 +240,17 @@ const Results = () => {
                                             <span className={`px-2 py-1 rounded-md text-xs ${draw.usingQuantum ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
                                                 {draw.usingQuantum ? 'Quantum' : 'Standard'} RNG
                                             </span>
-                                            
+
                                             {/* Add shuffle history button here in header */}
                                             {draw.iterations && draw.iterations.length > 0 && (
                                                 <motion.button
                                                     whileHover={{ scale: 1.05 }}
                                                     whileTap={{ scale: 0.95 }}
                                                     onClick={() => toggleDrawExpansion(draw.id)}
-                                                    className={`px-2 py-1 rounded-md text-xs border ${
-                                                        expandedDraw === draw.id 
-                                                            ? 'bg-yellow-500 border-yellow-600 text-white font-medium' 
+                                                    className={`px-2 py-1 rounded-md text-xs border ${expandedDraw === draw.id
+                                                            ? 'bg-yellow-500 border-yellow-600 text-white font-medium'
                                                             : 'border-yellow-400 bg-transparent text-yellow-600 hover:bg-yellow-50'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {expandedDraw === draw.id ? 'Hide Rounds' : 'Show All Rounds'}
                                                 </motion.button>
@@ -265,61 +262,65 @@ const Results = () => {
                                 <div className="p-4 md:p-6">
                                     <div className="flex justify-between items-center mb-3">
                                         <h3 className="text-lg font-medium text-gray-800">Results</h3>
-                                        
-                                        {/* Make this button more prominent */}
+
+                                        {/* Round indicator - always visible */}
                                         {draw.iterations && draw.iterations.length > 0 && (
-                                            <motion.button
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={() => toggleDrawExpansion(draw.id)}
-                                                className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-md font-medium transition-colors ${
-                                                    expandedDraw === draw.id 
-                                                        ? 'bg-yellow-500 text-white' 
-                                                        : 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700'
-                                                }`}
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
-                                                </svg>
-                                                {expandedDraw === draw.id ? 'Hide Shuffle Progress' : 'View Shuffle Progress'}
-                                            </motion.button>
+                                            <div className="bg-gray-100 px-3 py-1.5 rounded-md text-sm font-medium text-black dark:text-black">
+                                                {draw.numRounds} Rounds Completed
+                                            </div>
                                         )}
                                     </div>
 
-                                    {/* Shuffle progress display */}
-                                    <AnimatePresence>
-                                        {expandedDraw === draw.id && draw.iterations && draw.iterations.length > 0 && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="mb-6 overflow-hidden bg-gray-50 rounded-lg border border-gray-200 p-4"
-                                            >
-                                                <h4 className="text-sm font-medium text-yellow-600 mb-2">Round-by-Round Shuffle Results</h4>
-                                                
-                                                <div className="flex flex-wrap gap-2 mb-4 pb-3 border-b border-gray-200">
+                                    {/* Shuffle progress display - simplified controls, always visible */}
+                                    {draw.iterations && draw.iterations.length > 0 && (
+                                        <div className="mb-6 overflow-hidden bg-gray-50 rounded-lg border border-gray-200 p-4">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <h4 className="text-sm font-medium text-yellow-600">Each Round</h4>
+
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    onClick={() => toggleDrawExpansion(draw.id)}
+                                                    className="text-xs px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-md"
+                                                >
+                                                    {expandedDraw === draw.id ? 'Hide Details' : 'Show Details'}
+                                                </motion.button>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <span className="text-xs text-gray-600">Select Round:</span>
+                                                <select
+                                                    value={selectedIteration?.iteration ?? ""}
+                                                    onChange={(e) => {
+                                                        if (e.target.value === "") return;
+                                                        viewIteration(draw.id, parseInt(e.target.value));
+                                                    }}
+                                                    className="px-3 py-1.5 text-xs rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                                                >
+                                                    <option value="" disabled>Select a round</option>
                                                     {draw.iterations
                                                         .sort((a, b) => a.iteration - b.iteration)
                                                         .map((iter) => (
-                                                            <button
-                                                                key={iter.id}
-                                                                onClick={() => viewIteration(draw.id, iter.iteration)}
-                                                                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                                                                    selectedIteration?.drawId === draw.id && selectedIteration?.iteration === iter.iteration
-                                                                        ? 'bg-yellow-500 text-white font-medium'
-                                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                                }`}
+                                                            <option 
+                                                                key={iter.id} 
+                                                                value={iter.iteration}
                                                             >
-                                                                {iter.iteration === 0 ? 'Initial Order' : `Round ${iter.iteration}`}
-                                                            </button>
+                                                                {iter.iteration === 0 
+                                                                    ? 'Initial Order' 
+                                                                    : iter.iteration === draw.numRounds 
+                                                                        ? `Final (Round ${iter.iteration})` 
+                                                                        : `Round ${iter.iteration}`}
+                                                            </option>
                                                         ))}
-                                                </div>
-                                                
-                                                {selectedIteration?.drawId === draw.id ? (
+                                                </select>
+                                            </div>
+
+                                            <AnimatePresence>
+                                                {expandedDraw === draw.id && selectedIteration?.drawId === draw.id && (
                                                     <motion.div
                                                         initial={{ opacity: 0, y: 10 }}
                                                         animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: 10 }}
                                                         transition={{ duration: 0.3 }}
                                                     >
                                                         <div className="flex justify-between items-center mb-3">
@@ -346,7 +347,7 @@ const Results = () => {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        
+
                                                         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
                                                             <table className="w-full text-sm">
                                                                 <thead className="bg-gray-50">
@@ -362,13 +363,13 @@ const Results = () => {
                                                                         ?.entries.map((entry, index) => {
                                                                             // Determine if this entry is a winner and its rank
                                                                             const isWinner = draw.winners.some(w => w.entry.name === entry);
-                                                                            const winnerRank = isWinner 
-                                                                                ? draw.winners.find(w => w.entry.name === entry)?.rank 
+                                                                            const winnerRank = isWinner
+                                                                                ? draw.winners.find(w => w.entry.name === entry)?.rank
                                                                                 : null;
-                                                                            
+
                                                                             // Check if this is a potential winner (in top positions)
                                                                             const isPotentialWinner = index < draw.winners.length;
-                                                                            
+
                                                                             return (
                                                                                 <tr key={index} className={`
                                                                                     border-b border-gray-100 
@@ -399,14 +400,19 @@ const Results = () => {
                                                             </table>
                                                         </div>
                                                     </motion.div>
-                                                ) : (
-                                                    <div className="text-center py-6 text-gray-500">
-                                                        Select a round above to see shuffle results
-                                                    </div>
                                                 )}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                                {expandedDraw !== draw.id && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        className="text-center py-3 text-sm text-gray-600"
+                                                    >
+                                                        Click on any round above to see detailed results
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        </div>
+                                    )}
 
                                     <h3 className="text-lg font-medium mb-3 text-gray-800">Winners</h3>
                                     <div className="overflow-x-auto">
