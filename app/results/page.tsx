@@ -401,7 +401,7 @@ const Results = () => {
                                                         </div>
                                                     </motion.div>
                                                 )}
-                                                {expandedDraw !== draw.id && (
+                                                {/* {expandedDraw !== draw.id && (
                                                     <motion.div
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
@@ -409,7 +409,7 @@ const Results = () => {
                                                     >
                                                         Click on any round above to see detailed results
                                                     </motion.div>
-                                                )}
+                                                )} */}
                                             </AnimatePresence>
                                         </div>
                                     )}

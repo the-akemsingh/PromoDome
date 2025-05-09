@@ -7,34 +7,35 @@ interface ShuffleIteration {
   entries: string[];
 }
 
-interface AddDrawParams {
+interface CreateDrawParams {
   promoTitle: string;
   entries: string[];
   numRounds: number;
   shuffleCount: number;
   usingQuantum: boolean;
-  winners: string[];
-  iterations?: ShuffleIteration[];
 }
 
-export async function addDraw({
+interface AddDrawParams {
+  drawId: string;
+  winners: string[];
+}
+
+interface AddIterationParams {
+  drawId: string;
+  iteration: number;
+  entries: string[];
+}
+
+// Create a new draw at the start of the process
+export async function createDraw({
   promoTitle,
   entries,
   numRounds,
   shuffleCount,
   usingQuantum,
-  winners,
-  iterations = []
-}: AddDrawParams) {
+}: CreateDrawParams) {
   try {
-    // Debug iterations
-    console.log(`Received ${iterations.length} iterations`);
-    iterations.forEach((iter, i) => {
-      console.log(`Iteration ${iter.iteration}: ${iter.entries.length} entries`);
-    });
-
     // First check if promo exists
-    console.log(JSON.stringify(iterations))
     let promo = await prisma.promo.findFirst({
       where: {
         name: promoTitle
@@ -106,18 +107,6 @@ export async function addDraw({
       }
     }
 
-    // Combine existing and new entries
-    const allEntryRecords = [
-      ...existingEntries,
-      ...newEntries
-    ];
-
-    // Create a mapping of entry names to entry records for easy lookup
-    const entryMap = {
-      ...existingEntryMap,
-      ...Object.fromEntries(newEntries.map((entry: {name: string, id: string}) => [entry.name, entry.id]))
-    };
-
     // Generate verification code
     const verificationCode = uuidv4();
 
@@ -132,6 +121,109 @@ export async function addDraw({
       }
     });
 
+    return { 
+      success: true, 
+      drawId: draw.id,
+      verificationCode: draw.verificationCode,
+      entryMap: {
+        ...existingEntryMap,
+        ...Object.fromEntries(newEntries.map((entry: {name: string, id: string}) => [entry.name, entry.id]))
+      }
+    };
+  } catch (error) {
+    console.error("Error creating draw:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    };
+  }
+}
+
+// Add an iteration during the shuffling process
+export async function addIteration({
+  drawId,
+  iteration,
+  entries,
+}: AddIterationParams) {
+  try {
+    console.log(`Adding iteration ${iteration} with ${entries.length} entries to draw ${drawId}`);
+    
+    // Validate drawId
+    if (!drawId) {
+      console.error("Cannot add iteration: drawId is null or undefined");
+      return { 
+        success: false, 
+        error: "Draw ID is required" 
+      };
+    }
+    
+    // Check if the draw exists
+    const drawExists = await prisma.draw.findUnique({
+      where: { id: drawId }
+    });
+    
+    if (!drawExists) {
+      console.error(`Cannot add iteration: draw with ID ${drawId} not found`);
+      return { 
+        success: false, 
+        error: "Draw not found" 
+      };
+    }
+    
+    // Create the shuffle iteration
+    const createdIteration = await prisma.shuffleIteration.create({
+      data: {
+        drawId,
+        iteration,
+        entries
+      }
+    });
+
+    console.log(`Successfully added iteration ${iteration} with ID ${createdIteration.id}`);
+    
+    return { 
+      success: true,
+      iterationId: createdIteration.id
+    };
+  } catch (error) {
+    console.error("Error adding iteration:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    };
+  }
+}
+
+// Add winners to the draw at the end
+export async function addDraw({
+  drawId,
+  winners,
+}: AddDrawParams) {
+  try {
+    // Get the draw to check it exists
+    const draw = await prisma.draw.findUnique({
+      where: { id: drawId },
+      include: {
+        promo: {
+          include: {
+            entries: true
+          }
+        }
+      }
+    });
+
+    if (!draw) {
+      return { 
+        success: false, 
+        error: 'Draw not found' 
+      };
+    }
+
+    // Create an entry map for quick lookups
+    const entryMap = Object.fromEntries(
+      draw.promo.entries.map(entry => [entry.name, entry.id])
+    );
+
     // Create winner records with rankings
     await Promise.all(
       winners.map(async (winnerName, index) => {
@@ -145,40 +237,41 @@ export async function addDraw({
         
         return prisma.winner.create({
           data: {
-            drawId: draw.id,
-            entryId: entryId,
+            drawId,
+            entryId,
             rank: index + 1
           }
         });
       }).filter(Boolean)
     );
 
-    // Make sure your console.log is working to debug
-    console.log("Saving iterations:", JSON.stringify(iterations));
-
-    // Save shuffle iterations if provided
-    if (iterations && iterations.length > 0) {
-      await Promise.all(
-        iterations.map(async (iter) => {
-          console.log(`Saving iteration ${iter.iteration} with ${iter.entries.length} entries`);
-          return prisma.shuffleIteration.create({
-            data: {
-              drawId: draw.id,
-              iteration: iter.iteration,
-              entries: iter.entries
-            }
-          });
-        })
-      );
-    }
-
     return { 
       success: true, 
-      drawId: draw.id,
+      drawId,
       verificationCode: draw.verificationCode 
     };
   } catch (error) {
-    console.error("Error saving draw:", error);
+    console.error("Error saving winners:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'An unknown error occurred' 
+    };
+  }
+}
+
+// Cancel a draw
+export async function cancelDraw(drawId: string) {
+  try {
+    await prisma.draw.update({
+      where: { id: drawId },
+      data: { 
+        isCancelled: true 
+      }
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error("Error cancelling draw:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'An unknown error occurred' 

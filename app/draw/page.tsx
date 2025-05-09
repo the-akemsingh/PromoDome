@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { multiShuffle } from '@/lib/shuffle'
 import MultipleDice from '@/components/MultipleDice'
 import EntryList from '@/components/EntryList'
 import EntryTable from '@/components/EntryTable'
-import { addDraw } from '@/app/actions/addDraw'
+import { createDraw, addIteration, addDraw, cancelDraw } from '@/app/actions/addDraw'
 import { useTheme } from '@/context/ThemeContext'
 
 const Draw = () => {
@@ -37,6 +37,9 @@ const Draw = () => {
     const [iterationResults, setIterationResults] = useState<{ iteration: number, entries: string[] }[]>([])
     const [showIterationResults, setShowIterationResults] = useState<boolean>(false)
     const [selectedIteration, setSelectedIteration] = useState<number | null>(null)
+    const [currentDrawId, setCurrentDrawId] = useState<string | null>(null)
+    const [savingError, setSavingError] = useState<string | null>(null)
+    const drawIdRef = useRef<string | null>(null)
 
     // Calculate valid entries count
     const validEntriesCount = entries.filter(entry => entry.trim()).length
@@ -123,6 +126,7 @@ const Draw = () => {
             return;
         }
 
+        // Reset state before starting
         setPromoStarted(true);
         setIsShuffling(true);
         setWinner(null); // Reset winner at start
@@ -131,6 +135,10 @@ const Draw = () => {
         setShuffleError(null);
         setIterationResults([]); // Reset iteration results
 
+        // Initialize with valid entries (which now have suffixes for duplicates)
+        let currentShuffled = [...validEntries];
+        setShuffledEntries(currentShuffled);
+
         // Save initial state as iteration 0
         const initialIteration = {
             iteration: 0,
@@ -138,9 +146,59 @@ const Draw = () => {
         };
         setIterationResults([initialIteration]);
 
-        // Initialize with valid entries (which now have suffixes for duplicates)
-        let currentShuffled = [...validEntries];
-        setShuffledEntries(currentShuffled);
+        // First create the draw in the database
+        let drawId: string;
+        try {
+            setSaveStatus("Creating draw...");
+            const result = await createDraw({
+                promoTitle: promoTitle.trim(),
+                entries: validEntries,
+                numRounds: diceResult,
+                shuffleCount: 3,
+                usingQuantum
+            });
+
+            if (!result.success || !result.drawId) {
+                setSaveStatus(`Error: ${result.error || "Failed to create draw"}`);
+                setSavingError(result.error || "Failed to create draw");
+                return;
+            }
+
+            // Store the draw ID for use in this function
+            drawId = result.drawId;
+            
+            // Update state and ref
+            console.log("Draw created successfully with ID:", drawId);
+            setCurrentDrawId(drawId);
+            drawIdRef.current = drawId;
+            setVerificationCode(result.verificationCode!);
+            setSaveStatus("Draw created, starting shuffling...");
+        } catch (error) {
+            console.error("Error creating draw:", error);
+            setSaveStatus("Failed to create draw");
+            return;
+        }
+
+        // For debugging
+        console.log("Initial iteration (0) set with", validEntries.length, "entries");
+
+        // Save the initial iteration to the database using the drawId from above
+        try {
+            console.log("Saving initial iteration for draw:", drawId);
+            const iterResult = await addIteration({
+                drawId,
+                iteration: 0,
+                entries: currentShuffled
+            });
+            
+            if (iterResult.success) {
+                console.log("Initial iteration saved successfully with ID:", iterResult.iterationId);
+            } else {
+                console.error("Failed to save initial iteration:", iterResult.error);
+            }
+        } catch (error) {
+            console.error("Error saving initial iteration:", error);
+        }
 
         try {
             // Perform shuffling with animation
@@ -153,10 +211,29 @@ const Draw = () => {
                 setShuffledEntries([...currentShuffled]);
 
                 // Save this iteration result
-                setIterationResults(prev => [...prev, {
+                const thisIteration = {
                     iteration: i + 1,
                     entries: [...currentShuffled]
-                }]);
+                };
+                setIterationResults(prev => [...prev, thisIteration]);
+
+                // Save each iteration to the database as it happens
+                try {
+                    console.log(`Saving iteration ${i + 1} for draw: ${drawId}`);
+                    const iterResult = await addIteration({
+                        drawId,
+                        iteration: i + 1,
+                        entries: currentShuffled
+                    });
+                    
+                    if (iterResult.success) {
+                        console.log(`Iteration ${i + 1} saved successfully with ID: ${iterResult.iterationId}`);
+                    } else {
+                        console.error(`Failed to save iteration ${i + 1}:`, iterResult.error);
+                    }
+                } catch (error) {
+                    console.error(`Error saving iteration ${i + 1}:`, error);
+                }
             }
         } catch (error) {
             console.error("Error during shuffle:", error);
@@ -177,56 +254,65 @@ const Draw = () => {
                     setWinners(selectedWinners);
                     setWinner(selectedWinners[0]); // Keep first winner in single winner state for compatibility
                 }
+                
+                // Save the winners
+                if (drawId) {
+                    saveWinnersToDB(drawId, currentShuffled.slice(0, numWinners));
+                } else {
+                    console.error("Cannot save winners: drawId is not available");
+                }
             }
 
             // Auto-select the final iteration for better user experience
             setSelectedIteration(diceResult);
             setShowIterationResults(true);
-
-            // Save the draw results to the database
-            if (currentShuffled.length > 0 && promoTitle.trim()) {
-                const currentIterations = [...iterationResults, {
-                    iteration: diceResult,
-                    entries: [...currentShuffled]
-                }];
-                saveDrawToDB(currentShuffled, currentIterations);
-            }
         }
     };
 
-    // Function to save draw results to the database
-    const saveDrawToDB = async (shuffledResults: string[], currentIterationResults: { iteration: number, entries: string[] }[]) => {
-        try {
-            setSaveStatus("Saving results...");
+    // Function to save winners to the database
+    const saveWinnersToDB = async (drawId: string, winnerEntries: string[]) => {
+        if (!drawId) {
+            setSaveStatus("Error: No active draw ID");
+            return;
+        }
 
-            // Get winners from the shuffled results
-            const winnerEntries = shuffledResults.slice(0, numWinners);
-            console.log("logging iteration results");
-            console.log(currentIterationResults);
+        try {
+            setSaveStatus("Saving winners...");
+            
             const result = await addDraw({
-                promoTitle: promoTitle.trim(),
-                entries: shuffledResults,
-                numRounds: diceResult || 0,
-                shuffleCount: 3,
-                usingQuantum,
-                winners: winnerEntries,
-                iterations: currentIterationResults
+                drawId,
+                winners: winnerEntries
             });
 
             if (result.success) {
-                setVerificationCode(result.verificationCode!);
                 setSaveStatus("Results saved successfully");
                 setTimeout(() => setSaveStatus(null), 3000);
             } else {
                 setSaveStatus(`Error: ${result.error}`);
             }
         } catch (error) {
-            console.error("Error saving draw:", error);
-            setSaveStatus("Failed to save results");
+            console.error("Error saving winners:", error);
+            setSaveStatus("Failed to save winners");
         }
     };
 
-    const cancelPromo = () => {
+    const cancelPromo = async () => {
+        // If there's an active draw, cancel it in the database
+        const drawIdValue = drawIdRef.current;
+        if (drawIdValue) {
+            try {
+                setSaveStatus("Cancelling draw...");
+                await cancelDraw(drawIdValue);
+                setSaveStatus("Draw cancelled");
+                setTimeout(() => setSaveStatus(null), 3000);
+            } catch (error) {
+                console.error("Error cancelling draw:", error);
+                setSaveStatus("Failed to cancel draw");
+                setTimeout(() => setSaveStatus(null), 3000);
+            }
+        }
+
+        // Reset all state
         setPromoTitle('')
         setEntries([''])
         setNumRounds(0)
@@ -247,6 +333,9 @@ const Draw = () => {
         setIterationResults([])
         setShowIterationResults(false)
         setSelectedIteration(null)
+        setCurrentDrawId(null)
+        drawIdRef.current = null
+        setSavingError(null)
     }
 
     return (

@@ -44,6 +44,7 @@ model Draw {
   winners          Winner[]
   verificationCode String?
   iterations       ShuffleIteration[]
+  isCancelled      Boolean            @default(false)
 }
 
 model Winner {
