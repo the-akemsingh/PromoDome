@@ -54,16 +54,45 @@ const Draw = () => {
         return entries.filter(entry => entry.trim());
     };
 
+    // Helper function to add suffixes to duplicate entries
+    const addSuffixesToDuplicates = (entries: string[]): { displayEntries: string[], internalEntries: string[] } => {
+        const counter: { [key: string]: number } = {};
+        const internalEntries: string[] = [];
+        const displayEntries: string[] = [];
+
+        entries.forEach(entry => {
+            if (entry.trim()) {
+                displayEntries.push(entry); // Keep original entry for display
+
+                // For internal use (shuffling), add suffix if duplicate
+                if (counter[entry]) {
+                    counter[entry]++;
+                    internalEntries.push(`${entry}-${counter[entry] - 1}`);
+                } else {
+                    counter[entry] = 1;
+                    internalEntries.push(entry);
+                }
+            }
+        });
+
+        return { displayEntries, internalEntries };
+    };
+
     const handleEntryChange = (text: string) => {
         const lines = text.split('\n');
         setEntries(lines);
 
-        // Just filter entries without adding suffixes
-        const processed = filterEntries(lines);
-        setProcessedEntries(processed);
+        // Filter out empty entries
+        const filtered = lines.filter(entry => entry.trim());
 
-        // Store original entries with their order
-        const originalWithOrder = processed.map((entry, index) => ({
+        // Process duplicates by adding suffixes for internal use
+        const { displayEntries, internalEntries } = addSuffixesToDuplicates(filtered);
+
+        // Set processed entries with duplicates handled
+        setProcessedEntries(internalEntries);
+
+        // Store original entries with their order (without suffixes)
+        const originalWithOrder = displayEntries.map((entry, index) => ({
             id: index + 1,
             entry
         }));
@@ -113,16 +142,16 @@ const Draw = () => {
     const startPromo = async () => {
         if (!diceResult || diceResult < 1) return;
 
-        // Use processed entries without adding suffixes
-        const validEntries = processedEntries.length > 0
+        // Use processed entries (which now have suffixes for duplicates)
+        const internalEntries = processedEntries.length > 0
             ? processedEntries
             : filterEntries(entries);
 
-        if (validEntries.length < 2) return;
+        if (internalEntries.length < 2) return;
 
         // Check if we have enough entries for the number of winners requested
-        if (numWinners > validEntries.length) {
-            setShuffleError(`Not enough entries (${validEntries.length}) for ${numWinners} winners`);
+        if (numWinners > internalEntries.length) {
+            setShuffleError(`Not enough entries (${internalEntries.length}) for ${numWinners} winners`);
             return;
         }
 
@@ -135,24 +164,39 @@ const Draw = () => {
         setShuffleError(null);
         setIterationResults([]); // Reset iteration results
 
-        // Initialize with valid entries (which now have suffixes for duplicates)
-        let currentShuffled = [...validEntries];
-        setShuffledEntries(currentShuffled);
+        // Initialize with internal entries (which now have suffixes for duplicates)
+        let currentShuffled = [...internalEntries];
 
-        // Save initial state as iteration 0
+        // Store mapping of internal entries to display entries
+        const entryMapping = new Map<string, string>();
+        internalEntries.forEach((entry, index) => {
+            // If the entry has a suffix (contains '-'), extract the original entry
+            if (entry.includes('-')) {
+                const originalEntry = entry.substring(0, entry.lastIndexOf('-'));
+                entryMapping.set(entry, originalEntry);
+            } else {
+                entryMapping.set(entry, entry);
+            }
+        });
+
+        // For display, convert internal entries to display entries
+        const displayShuffled = currentShuffled.map(entry => entryMapping.get(entry) || entry);
+        setShuffledEntries(displayShuffled);
+
+        // Save initial state as iteration 0 (using display entries)
         const initialIteration = {
             iteration: 0,
-            entries: [...validEntries]
+            entries: [...displayShuffled]
         };
         setIterationResults([initialIteration]);
 
-        // First create the draw in the database
+        // Create draw with display entries (without suffixes)
         let drawId: string;
         try {
             setSaveStatus("Creating draw...");
             const result = await createDraw({
                 promoTitle: promoTitle.trim(),
-                entries: validEntries,
+                entries: displayShuffled, // Use display entries for the database
                 numRounds: diceResult,
                 shuffleCount: 3,
                 usingQuantum
@@ -166,7 +210,7 @@ const Draw = () => {
 
             // Store the draw ID for use in this function
             drawId = result.drawId;
-            
+
             // Update state and ref
             console.log("Draw created successfully with ID:", drawId);
             setCurrentDrawId(drawId);
@@ -180,7 +224,7 @@ const Draw = () => {
         }
 
         // For debugging
-        console.log("Initial iteration (0) set with", validEntries.length, "entries");
+        console.log("Initial iteration (0) set with", displayShuffled.length, "entries");
 
         // Save the initial iteration to the database using the drawId from above
         try {
@@ -190,7 +234,7 @@ const Draw = () => {
                 iteration: 0,
                 entries: currentShuffled
             });
-            
+
             if (iterResult.success) {
                 console.log("Initial iteration saved successfully with ID:", iterResult.iterationId);
             } else {
@@ -225,7 +269,7 @@ const Draw = () => {
                         iteration: i + 1,
                         entries: currentShuffled
                     });
-                    
+
                     if (iterResult.success) {
                         console.log(`Iteration ${i + 1} saved successfully with ID: ${iterResult.iterationId}`);
                     } else {
@@ -247,17 +291,23 @@ const Draw = () => {
             // Set the winners (top entries after shuffling based on numWinners)
             if (currentShuffled.length > 0) {
                 if (numWinners === 1) {
-                    setWinner(currentShuffled[0]);
-                    setWinners([currentShuffled[0]]);
+                    const displayWinner = entryMapping.get(currentShuffled[0]) || currentShuffled[0];
+                    setWinner(displayWinner);
+                    setWinners([displayWinner]);
                 } else {
-                    const selectedWinners = currentShuffled.slice(0, numWinners);
+                    const selectedWinners = currentShuffled.slice(0, numWinners).map(entry =>
+                        entryMapping.get(entry) || entry
+                    );
                     setWinners(selectedWinners);
-                    setWinner(selectedWinners[0]); // Keep first winner in single winner state for compatibility
+                    setWinner(selectedWinners[0]);
                 }
-                
-                // Save the winners
+
+                // Save the display winners to DB
                 if (drawId) {
-                    saveWinnersToDB(drawId, currentShuffled.slice(0, numWinners));
+                    const displayWinners = currentShuffled.slice(0, numWinners).map(entry =>
+                        entryMapping.get(entry) || entry
+                    );
+                    saveWinnersToDB(drawId, displayWinners);
                 } else {
                     console.error("Cannot save winners: drawId is not available");
                 }
@@ -278,7 +328,7 @@ const Draw = () => {
 
         try {
             setSaveStatus("Saving winners...");
-            
+
             const result = await addDraw({
                 drawId,
                 winners: winnerEntries
@@ -298,17 +348,19 @@ const Draw = () => {
 
     const cancelPromo = async () => {
         // If there's an active draw, cancel it in the database
-        const drawIdValue = drawIdRef.current;
-        if (drawIdValue) {
-            try {
-                setSaveStatus("Cancelling draw...");
-                await cancelDraw(drawIdValue);
-                setSaveStatus("Draw cancelled");
-                setTimeout(() => setSaveStatus(null), 3000);
-            } catch (error) {
-                console.error("Error cancelling draw:", error);
-                setSaveStatus("Failed to cancel draw");
-                setTimeout(() => setSaveStatus(null), 3000);
+        if (winners.length === 0) {
+            const drawIdValue = drawIdRef.current;
+            if (drawIdValue) {
+                try {
+                    setSaveStatus("Cancelling draw...");
+                    await cancelDraw(drawIdValue);
+                    setSaveStatus("Draw cancelled");
+                    setTimeout(() => setSaveStatus(null), 3000);
+                } catch (error) {
+                    console.error("Error cancelling draw:", error);
+                    setSaveStatus("Failed to cancel draw");
+                    setTimeout(() => setSaveStatus(null), 3000);
+                }
             }
         }
 
@@ -379,11 +431,9 @@ const Draw = () => {
                         transition={{ delay: 0.5, duration: 0.5 }}
                     >
 
-                        <div className='flex flex-col md:flex-row '>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                             {/* Promo Title */}
-                            <div className='flex flex-col gap-2'>
-
-
+                            <div className='flex flex-col justify-end gap-2'>
                                 <div className="flex max-h-14 lg:min-w-xl items-center p-2 rounded">
                                     <div className="font-medium text-black  dark:text-black bg-gray-300 py-1 w-24 pl-2">Promo Title</div>
                                     <div className="flex-grow">
@@ -425,47 +475,42 @@ const Draw = () => {
                                         />
                                     </div>
                                 </div>
-
                             </div>
 
                             {/* Dice Section */}
                             <motion.div
-                                className="dice-section border md:min-w-xl p-4  border-gray-200"
+                                className="dice-section border p-4 border-gray-200"
                                 whileHover={{ scale: 1.01 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <div className="section-header mb-3 flex justify-between items-center">
+                                <div className="section-header mb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
                                     <h3 className="text-sm md:text-base font-medium text-gray-800">Shuffle Rounds</h3>
-                                    <motion.div
-                                        className="rounds-display text-xs md:text-sm px-2 py-1 text-yellow-700 rounded-md"
-                                        initial={{ scale: 1 }}
-                                        animate={isRolling || isShuffling ? { scale: [1, 1.05, 1], transition: { repeat: Infinity, duration: 1.5 } } : {}}
-                                        whileHover={{ scale: 1.05 }}
-                                    >
-                                        {isRolling
-                                            ? "Rolling..."
-                                            : isShuffling
-                                                ? `Round ${currentRound}/${diceResult}`
-                                                : diceResult
-                                                    ? `${diceResult} Rounds`
-                                                    : "Select rounds"}
-                                    </motion.div>
-                                </div>
-
-                                {/* Toggle between dice and manual input */}
-                                <div className="mb-4">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs md:text-sm text-gray-600 flex items-center">
-                                            <button
-                                                onClick={toggleRoundsMode}
-                                                className={`w-4 h-4 rounded mr-2 border ${useManualRounds ? 'bg-yellow-500 border-yellow-600' : 'bg-gray-200 border-gray-300'}`}
-                                                disabled={promoStarted}
-                                            />
-                                            Manual rounds
-                                        </label>
-                                        <div className="text-xs text-gray-500">
-                                            {useManualRounds ? "Enter number of rounds" : "Roll dice for rounds"}
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+                                        {/* Toggle between dice and manual input */}
+                                        <div className="flex items-center">
+                                            <label className="text-xs md:text-sm text-gray-600 flex items-center">
+                                                <button
+                                                    onClick={toggleRoundsMode}
+                                                    className={`w-4 h-4 rounded mr-2 border ${useManualRounds ? 'bg-yellow-500 border-yellow-600' : 'bg-gray-200 border-gray-300'}`}
+                                                    disabled={promoStarted}
+                                                />
+                                                Manual rounds
+                                            </label>
                                         </div>
+                                        <motion.div
+                                            className="rounds-display text-xs md:text-sm px-2 py-1 text-yellow-700 rounded-md whitespace-nowrap"
+                                            initial={{ scale: 1 }}
+                                            animate={isRolling || isShuffling ? { scale: [1, 1.05, 1], transition: { repeat: Infinity, duration: 1.5 } } : {}}
+                                            whileHover={{ scale: 1.05 }}
+                                        >
+                                            {isRolling
+                                                ? "Rolling..."
+                                                : isShuffling
+                                                    ? `Round ${currentRound}/${diceResult}`
+                                                    : diceResult
+                                                        ? `${diceResult} Rounds`
+                                                        : "Select rounds"}
+                                        </motion.div>
                                     </div>
                                 </div>
 
@@ -530,35 +575,36 @@ const Draw = () => {
                                     )}
                                 </AnimatePresence>
                             </motion.div>
-
                         </div>
 
-
-
-                        {/* Quantum indicator */}
-                        <motion.div
-                            className="quantum-indicator flex items-center gap-2 text-xs text-gray-500"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.8, duration: 0.5 }}
-                        >
+                        {verificationCode && (
                             <motion.div
-                                className={`h-2 w-2 rounded-full ${usingQuantum ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                animate={{ scale: [1, 1.2, 1], opacity: [0.7, 1, 0.7] }}
-                                transition={{ repeat: Infinity, duration: 2 }}
-                            ></motion.div>
-                            <span>{usingQuantum ? "Using Quantum RNG" : "Using Standard RNG"}</span>
-                            {shuffleError && (
-                                <motion.span
-                                    className="text-red-600 ml-2"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.3 }}
-                                >
-                                    {shuffleError}
-                                </motion.span>
-                            )}
-                        </motion.div>
+                                className="mt-6 p-4 bg-gray-100 rounded-lg border border-yellow-300"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.8 }}
+                            >
+                                <div className="flex justify-between items-center">
+                                    <div className="text-sm text-gray-600">Verification Code:</div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-yellow-600">{verificationCode}</span>
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(verificationCode);
+                                                setCopied(true);
+                                                setTimeout(() => setCopied(false), 2000);
+                                            }}
+                                            className="p-1 bg-gray-200 rounded hover:bg-gray-300 text-black dark:text-black"
+                                        >
+                                            {copied ? "Copied!" : "Copy"}
+                                        </button>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Share this code to verify draw results.
+                                </p>
+                            </motion.div>
+                        )}
                     </motion.div>
 
                     <motion.div
@@ -610,7 +656,7 @@ const Draw = () => {
                                         />
 
                                         {/* Preview of processed entries */}
-                                        {processedEntries.length > 0 && entries.length > 1 && (
+                                        {/* {processedEntries.length > 0 && entries.length > 1 && (
                                             <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
                                                 <div className="font-semibold mb-1 text-gray-600">Preview with duplicates processed:</div>
                                                 <div className="max-h-32 overflow-y-auto text-gray-500">
@@ -619,7 +665,7 @@ const Draw = () => {
                                                     ))}
                                                 </div>
                                             </div>
-                                        )}
+                                        )} */}
                                     </motion.div>
                                 ) : (
                                     <motion.div
@@ -632,12 +678,12 @@ const Draw = () => {
                                     >
                                         {/* Controls for showing iterations and initial entries */}
                                         <div className="flex justify-end items-center gap-2 mb-2 flex-wrap">
-                                            <button
+                                            {/* <button
                                                 onClick={() => setShowInitialEntries(!showInitialEntries)}
                                                 className="text-xs flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-300 text-black dark:text-black hover:bg-gray-200"
                                             >
                                                 <span>{showInitialEntries ? 'Hide' : 'Show'} Initial Entries</span>
-                                            </button>
+                                            </button> */}
 
                                             {iterationResults.length > 0 && (
                                                 <button
@@ -649,7 +695,7 @@ const Draw = () => {
                                             )}
                                         </div>
 
-                                        <AnimatePresence>
+                                        {/* <AnimatePresence>
                                             {showInitialEntries && (
                                                 <motion.div
                                                     initial={{ opacity: 0, height: 0 }}
@@ -664,7 +710,7 @@ const Draw = () => {
                                                     />
                                                 </motion.div>
                                             )}
-                                        </AnimatePresence>
+                                        </AnimatePresence> */}
 
                                         {/* Shuffle Iterations Display */}
                                         <AnimatePresence>
@@ -684,12 +730,12 @@ const Draw = () => {
                                                                 key={iter.iteration}
                                                                 onClick={() => setSelectedIteration(iter.iteration)}
                                                                 className={`px-2 py-1 text-black dark:text-black text-xs rounded ${selectedIteration === iter.iteration
-                                                                        ? 'bg-yellow-500 text-black font-medium'
-                                                                        : iter.iteration === 0
-                                                                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                                            : iter.iteration === diceResult
-                                                                                ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border border-yellow-500'
-                                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                    ? 'bg-yellow-500 text-black font-medium'
+                                                                    : iter.iteration === 0
+                                                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                        : iter.iteration === diceResult
+                                                                            ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border border-yellow-500'
+                                                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                                                     }`}
                                                             >
                                                                 {iter.iteration === 0
@@ -732,7 +778,7 @@ const Draw = () => {
                                         <EntryTable
                                             entries={shuffledEntries.map((entry, index) => ({ id: index + 1, entry }))}
                                             winners={winners}
-                                            title="Results"
+                                            title="Final Result"
                                         />
                                     </motion.div>
                                 )}
@@ -879,34 +925,7 @@ const Draw = () => {
                 )}
             </AnimatePresence>
 
-            {verificationCode && (
-                <motion.div
-                    className="mt-6 p-4 bg-gray-100 rounded-lg border border-yellow-300"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.8 }}
-                >
-                    <div className="flex justify-between items-center">
-                        <div className="text-sm text-gray-600">Verification Code:</div>
-                        <div className="flex items-center gap-2">
-                            <span className="font-mono text-yellow-600">{verificationCode}</span>
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(verificationCode);
-                                    setCopied(true);
-                                    setTimeout(() => setCopied(false), 2000);
-                                }}
-                                className="p-1 bg-gray-200 rounded hover:bg-gray-300 text-black dark:text-black"
-                            >
-                                {copied ? "Copied!" : "Copy"}
-                            </button>
-                        </div>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                        Share this code to verify draw results.
-                    </p>
-                </motion.div>
-            )}
+
         </div>
     );
 };

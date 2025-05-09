@@ -70,7 +70,7 @@ const Navigation = () => {
                   onClick={() => {
                     window.location.href = item.path
                   }}
-                  className={`px-1.5 py-1 sm:px-2 sm:py-1.5 md:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${isActive
+                  className={`px-1.5 cursor-pointer py-1 sm:px-2 sm:py-1.5 md:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${isActive
                       ? 'text-yellow-500 bg-gray-900'
                       : 'text-gray-300 hover:text-white hover:bg-gray-800'
                     }`}

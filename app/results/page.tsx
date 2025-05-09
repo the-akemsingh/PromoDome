@@ -58,7 +58,7 @@ const Results = () => {
 
                 // Auto-expand all draws that have iterations
                 if (data.length > 0) {
-                    setExpandedDraw(data[0].id) // Expand the first draw by default
+                    // setExpandedDraw(data[0].id) // Expand the first draw by default
 
                     // Auto-select first iteration for first draw
                     if (data[0].iterations && data[0].iterations.length > 0) {
@@ -381,7 +381,7 @@ const Results = () => {
                                                                                     <td className="px-3 py-2 font-mono text-gray-500">#{index + 1}</td>
                                                                                     <td className="px-3 py-2">
                                                                                         <span className={isWinner ? 'text-yellow-600 font-medium' : ''}>
-                                                                                            {entry}
+                                                                                            {entry.replace(/-\d+$/, '')}
                                                                                         </span>
                                                                                     </td>
                                                                                     <td className="px-3 py-2 text-right">

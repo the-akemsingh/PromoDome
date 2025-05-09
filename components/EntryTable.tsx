@@ -45,17 +45,17 @@ const EntryTable = ({ entries, winners = [], title }: EntryTableProps) => {
                     {id}
                   </td>
                   <td className="px-3 py-2 whitespace-normal break-words text-sm text-white">
-                    {entry}
+                  {entry.replace(/-\d+$/, '')}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-sm text-right">
                     {isWinner && (
                       <motion.span
-                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-500"
+                        className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium  text-yellow-500"
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.2, type: "spring" }}
                       >
-                        {rank === 1 ? "Winner 🏆" : `#${rank}`}
+                        {rank === 1 && title.includes('Final Result') ? "Winner 🏆" : null}
                       </motion.span>
                     )}
                   </td>
