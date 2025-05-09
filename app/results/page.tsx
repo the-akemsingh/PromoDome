@@ -24,7 +24,10 @@ interface Draw {
     usingQuantum: boolean
     createdAt: Date
     verificationCode: string
-    promo: { name: string }
+    promo: { 
+        name: string
+        isReset?: boolean 
+    }
     winners: Winner[]
     iterations: ShuffleIteration[]
 }

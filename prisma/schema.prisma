@@ -20,6 +20,7 @@ model Promo {
   updatedAt DateTime @updatedAt
   entries   Entry[]
   draws     Draw[]
+  isReset   Boolean  @default(false)
 }
 
 model Entry {
@@ -44,7 +45,6 @@ model Draw {
   winners          Winner[]
   verificationCode String?
   iterations       ShuffleIteration[]
-  isCancelled      Boolean            @default(false)
 }
 
 model Winner {

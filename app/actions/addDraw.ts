@@ -259,19 +259,33 @@ export async function addDraw({
   }
 }
 
-// Cancel a draw
+// Cancel a draw by resetting its promo
 export async function cancelDraw(drawId: string) {
   try {
-    await prisma.draw.update({
+    // First get the draw to find its promo
+    const draw = await prisma.draw.findUnique({
       where: { id: drawId },
+      select: { promoId: true }
+    });
+
+    if (!draw) {
+      return { 
+        success: false, 
+        error: "Draw not found" 
+      };
+    }
+
+    // Mark the promo as reset
+    await prisma.promo.update({
+      where: { id: draw.promoId },
       data: { 
-        isCancelled: true 
+        isReset: true 
       }
     });
     
     return { success: true };
   } catch (error) {
-    console.error("Error cancelling draw:", error);
+    console.error("Error resetting promo:", error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'An unknown error occurred' 

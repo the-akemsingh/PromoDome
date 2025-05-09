@@ -4,10 +4,16 @@ import prisma from '@/prismaClient'
 export async function GET() {
   try {
     const draws = await prisma.draw.findMany({
+      where: {
+        promo: {
+          isReset: false
+        }
+      },
       include: {
         promo: {
           select: {
-            name: true
+            name: true,
+            isReset: true
           }
         },
         winners: {
