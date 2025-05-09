@@ -417,9 +417,7 @@ const Draw = () => {
                     >
                         D O M E
                     </motion.h1>
-                    <div className=" text-xl md:text-3xl text-black dark:text-black" style={{ fontFamily: 'CostaRica' }}>
-                        Quantum RNG
-                    </div>
+
                 </div>
 
                 <div className="flex flex-col gap-6 md:gap-8">
@@ -434,6 +432,9 @@ const Draw = () => {
                         <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                             {/* Promo Title */}
                             <div className='flex flex-col justify-end gap-2'>
+                                <div className=" text-xl md:text-5xl text-center mb-10 text-black dark:text-black" style={{ fontFamily: 'CostaRica' }}>
+                                    Quantum RNG
+                                </div>
                                 <div className="flex max-h-14 lg:min-w-xl items-center p-2 rounded">
                                     <div className="font-medium text-black  dark:text-black bg-gray-300 py-1 w-24 pl-2">Promo Title</div>
                                     <div className="flex-grow">
