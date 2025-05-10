@@ -207,8 +207,8 @@ const Results = () => {
                                 className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5 }}
-                                whileHover={{ scale: 1.01 }}
+                                // transition={{ duration: 0.5 }}
+                                // whileHover={{ scale: 1.01 }}
                             >
                                 <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50">
                                     <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -239,6 +239,9 @@ const Results = () => {
                                         <div className="flex flex-wrap gap-2 items-center">
                                             <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">
                                                 Rounds: {draw.numRounds}
+                                            </span>
+                                            <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">
+                                                Winners: {draw.winners.length}
                                             </span>
                                             <span className={`px-2 py-1 rounded-md text-xs ${draw.usingQuantum ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
                                                 {draw.usingQuantum ? 'Quantum' : 'Standard'} RNG
@@ -357,7 +360,7 @@ const Results = () => {
                                                                     <tr>
                                                                         <th className="px-3 py-2 text-left font-medium text-gray-600">Position</th>
                                                                         <th className="px-3 py-2 text-left font-medium text-gray-600">Entry</th>
-                                                                        <th className="px-3 py-2 text-right font-medium text-gray-600">Status</th>
+                                                                        {/* <th className="px-3 py-2 text-right font-medium text-gray-600">Status</th> */}
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -384,18 +387,14 @@ const Results = () => {
                                                                                             {entry.replace(/-\d+$/, '')}
                                                                                         </span>
                                                                                     </td>
-                                                                                    <td className="px-3 py-2 text-right">
+                                                                                    {/* <td className="px-3 py-2 text-right">
                                                                                         {isWinner && (
                                                                                             <span className="inline-flex items-center justify-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
                                                                                                 Winner #{winnerRank}
                                                                                             </span>
                                                                                         )}
-                                                                                        {!isWinner && isPotentialWinner && selectedIteration.iteration !== draw.numRounds && (
-                                                                                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded bg-gray-200 text-gray-600 text-xs">
-                                                                                                Potential Winner
-                                                                                            </span>
-                                                                                        )}
-                                                                                    </td>
+                                                                                       
+                                                                                    </td> */}
                                                                                 </tr>
                                                                             );
                                                                         })}
@@ -404,15 +403,6 @@ const Results = () => {
                                                         </div>
                                                     </motion.div>
                                                 )}
-                                                {/* {expandedDraw !== draw.id && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        className="text-center py-3 text-sm text-gray-600"
-                                                    >
-                                                        Click on any round above to see detailed results
-                                                    </motion.div>
-                                                )} */}
                                             </AnimatePresence>
                                         </div>
                                     )}

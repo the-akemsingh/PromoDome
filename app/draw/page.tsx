@@ -20,7 +20,7 @@ const Draw = () => {
     const [shuffledEntries, setShuffledEntries] = useState<string[]>([])
     const [winner, setWinner] = useState<string | null>(null)
     const [promoStarted, setPromoStarted] = useState<boolean>(false)
-    const [diceCount, setDiceCount] = useState<number>(2)
+    const [diceCount, setDiceCount] = useState<number>(1)
     const [currentRound, setCurrentRound] = useState<number>(0)
     const [usingQuantum, setUsingQuantum] = useState<boolean>(true)
     const [shuffleError, setShuffleError] = useState<string | null>(null)
@@ -67,7 +67,7 @@ const Draw = () => {
                 // For internal use (shuffling), add suffix if duplicate
                 if (counter[entry]) {
                     counter[entry]++;
-                    internalEntries.push(`${entry}-${counter[entry] - 1}`);
+                    internalEntries.push(`${entry}-${counter[entry]}`);
                 } else {
                     counter[entry] = 1;
                     internalEntries.push(entry);
@@ -291,23 +291,18 @@ const Draw = () => {
             // Set the winners (top entries after shuffling based on numWinners)
             if (currentShuffled.length > 0) {
                 if (numWinners === 1) {
-                    const displayWinner = entryMapping.get(currentShuffled[0]) || currentShuffled[0];
-                    setWinner(displayWinner);
-                    setWinners([displayWinner]);
+                    setWinner(currentShuffled[0]);
+                    setWinners([currentShuffled[0]]);
                 } else {
-                    const selectedWinners = currentShuffled.slice(0, numWinners).map(entry =>
-                        entryMapping.get(entry) || entry
-                    );
+                    const selectedWinners = currentShuffled.slice(0, numWinners);
                     setWinners(selectedWinners);
                     setWinner(selectedWinners[0]);
                 }
 
-                // Save the display winners to DB
+                // Save the winners with suffixes to DB
                 if (drawId) {
-                    const displayWinners = currentShuffled.slice(0, numWinners).map(entry =>
-                        entryMapping.get(entry) || entry
-                    );
-                    saveWinnersToDB(drawId, displayWinners);
+                    const winnersWithSuffix = currentShuffled.slice(0, numWinners);
+                    saveWinnersToDB(drawId, winnersWithSuffix);
                 } else {
                     console.error("Cannot save winners: drawId is not available");
                 }
@@ -369,10 +364,12 @@ const Draw = () => {
         setEntries([''])
         setNumRounds(0)
         setDiceResult(null)
+        setDiceCount(1)
         setIsRolling(false)
         setIsShuffling(false)
         setShuffledEntries([])
         setWinner(null)
+        setNumWinners(1)
         setWinners([])
         setPromoStarted(false)
         setShuffleError(null)
@@ -578,9 +575,9 @@ const Draw = () => {
                             </motion.div>
                         </div>
 
-                        {verificationCode && (
+                        {verificationCode && winners.length > 0 && (
                             <motion.div
-                                className="mt-6 p-4 bg-gray-100 rounded-lg border border-yellow-300"
+                                className="mt-6 p-4 bg-gray-100 rounded-lg border "
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.8 }}
@@ -618,8 +615,7 @@ const Draw = () => {
                         {/* Entries text area */}
                         <motion.div
                             className="entries-section flex-grow bg-gray-50 rounded-sm  border border-gray-200"
-                        // whileHover={{ scale: 1.01 }}
-                        // transition={{ duration: 0.2 }}
+
                         >
                             <div className="section-header mb-3 flex justify-between bg-gray-300 pt-2 pb-2 px-3 items-center">
                                 <h3 className="text-sm md:text-base font-medium text-gray-800">List of Entries
@@ -649,24 +645,11 @@ const Draw = () => {
                                         transition={{ duration: 0.3 }}
                                     >
                                         <textarea
-                                            // placeholder="Add one entry per line"
                                             value={entries.join('\n')}
                                             onChange={(e) => handleEntryChange(e.target.value)}
                                             rows={10}
                                             className="w-full px-3 py-2 text-sm  border-gray-300 text-black  bg-white"
                                         />
-
-                                        {/* Preview of processed entries */}
-                                        {/* {processedEntries.length > 0 && entries.length > 1 && (
-                                            <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
-                                                <div className="font-semibold mb-1 text-gray-600">Preview with duplicates processed:</div>
-                                                <div className="max-h-32 overflow-y-auto text-gray-500">
-                                                    {processedEntries.map((entry, idx) => (
-                                                        <div key={idx}>{entry}</div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )} */}
                                     </motion.div>
                                 ) : (
                                     <motion.div
@@ -749,8 +732,6 @@ const Draw = () => {
                                                         ))}
                                                     </div>
 
-
-
                                                     {/* Selected iteration results */}
                                                     {selectedIteration !== null && (
                                                         <div className="mt-2">
@@ -768,6 +749,7 @@ const Draw = () => {
                                                                             ? `Final Result (Round ${selectedIteration})`
                                                                             : `After Round ${selectedIteration}`
                                                                 }
+                                                                numWinners={numWinners}
                                                             />
                                                         </div>
                                                     )}
@@ -780,6 +762,7 @@ const Draw = () => {
                                             entries={shuffledEntries.map((entry, index) => ({ id: index + 1, entry }))}
                                             winners={winners}
                                             title="Final Result"
+                                            numWinners={numWinners}
                                         />
                                     </motion.div>
                                 )}
@@ -893,7 +876,7 @@ const Draw = () => {
                                                 {index + 1}
                                             </div>
                                             <div className="text-gray-800 font-medium break-words">
-                                                {winnerEntry}
+                                                {winnerEntry.replace(/-\d+$/, '')}
                                             </div>
                                         </div>
                                     </motion.div>

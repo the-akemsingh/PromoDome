@@ -227,11 +227,14 @@ export async function addDraw({
     // Create winner records with rankings
     await Promise.all(
       winners.map(async (winnerName, index) => {
+        // Remove any suffix from the winner name before looking up
+        const baseName = winnerName.replace(/-\d+$/, '');
+        
         // Find the entry ID for this winner name
-        const entryId = entryMap[winnerName];
+        const entryId = entryMap[baseName];
         
         if (!entryId) {
-          console.warn(`Winner entry not found: ${winnerName}`);
+          console.warn(`Winner entry not found: ${baseName}`);
           return null;
         }
         
