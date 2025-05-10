@@ -53,20 +53,24 @@ const Results = () => {
                 }
 
                 const data = await response.json()
-                setDraws(data)
-                setFilteredDraws(data)
-                console.log(data)
+                
+                // Filter out draws with zero iterations
+                const validDraws = data.filter((draw: Draw) => 
+                    draw.iterations && draw.iterations.length > 0
+                );
+                
+                setDraws(validDraws)
+                setFilteredDraws(validDraws)
+                console.log("Filtered out zero-iteration draws:", data.length - validDraws.length)
 
                 // Auto-expand all draws that have iterations
-                if (data.length > 0) {
-                    // setExpandedDraw(data[0].id) // Expand the first draw by default
-
+                if (validDraws.length > 0) {
                     // Auto-select first iteration for first draw
-                    if (data[0].iterations && data[0].iterations.length > 0) {
-                        const firstIteration = [...data[0].iterations]
+                    if (validDraws[0].iterations && validDraws[0].iterations.length > 0) {
+                        const firstIteration = [...validDraws[0].iterations]
                             .sort((a, b) => a.iteration - b.iteration)[0]
                         setSelectedIteration({
-                            drawId: data[0].id,
+                            drawId: validDraws[0].id,
                             iteration: firstIteration.iteration
                         })
                     }
