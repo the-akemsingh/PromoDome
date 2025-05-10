@@ -45,13 +45,13 @@ const Draw = () => {
     const drawIdRef = useRef<string | null>(null);
 
     // Memoize expensive calculations
-    const validEntriesCount = useMemo(() => 
+    const validEntriesCount = useMemo(() =>
         drawState.entries.filter(entry => entry.trim()).length,
         [drawState.entries]
     );
 
     // Memoize filtered entries
-    const filteredEntries = useMemo(() => 
+    const filteredEntries = useMemo(() =>
         drawState.entries.filter(entry => entry.trim()),
         [drawState.entries]
     );
@@ -155,7 +155,7 @@ const Draw = () => {
         setDrawState(prev => ({
             ...prev,
             useManualRounds: !prev.useManualRounds,
-            diceResult: !prev.useManualRounds 
+            diceResult: !prev.useManualRounds
                 ? (prev.manualRounds !== '' ? parseInt(prev.manualRounds, 10) : null)
                 : null,
             manualRounds: prev.useManualRounds ? '' : prev.manualRounds
@@ -458,6 +458,19 @@ const Draw = () => {
         }, 100);
     }, [drawState.winners.length]);
 
+    // Add a new state for the current time
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    // Create a useEffect hook to update the time every second
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 1000);
+        
+        // Cleanup function to clear the interval when component unmounts
+        return () => clearInterval(timer);
+    }, []);
+
     return (
         <div className="min-h-screen w-full flex flex-col bg-white dark:bg-white justify-center items-center text-black dark:text-white py-10 md:py-12 lg:py-16 px-4 md:px-8">
             <motion.div
@@ -649,30 +662,28 @@ const Draw = () => {
 
                         {drawState.verificationCode && drawState.winners.length > 0 && (
                             <motion.div
-                                className="mt-6 p-4 bg-gray-100 rounded-lg border "
+                                className="mt-4 p-3 bg-gray-100 rounded-lg border"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.8 }}
                             >
-                                <div className="flex justify-between items-center">
-                                    <div className="text-sm text-gray-600">Verification Code:</div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">Verification Code:</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="font-mono text-yellow-600">{drawState.verificationCode}</span>
+                                        <code className="font-mono text-yellow-600">{drawState.verificationCode}</code>
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(drawState.verificationCode!);
                                                 setDrawState(prev => ({ ...prev, copied: true }));
                                                 setTimeout(() => setDrawState(prev => ({ ...prev, copied: false })), 2000);
                                             }}
-                                            className="p-1 bg-gray-200 rounded hover:bg-gray-300 text-black dark:text-black"
+                                            className="px-2 py-0.5 bg-gray-200 rounded hover:bg-gray-300 text-black text-xs"
                                         >
                                             {drawState.copied ? "Copied!" : "Copy"}
                                         </button>
                                     </div>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Share this code to verify draw results.
-                                </p>
+                                <p className="text-xs text-gray-500 mt-1">Share this code to verify draw results.</p>
                             </motion.div>
                         )}
                     </motion.div>
@@ -734,7 +745,7 @@ const Draw = () => {
                                     >
                                         {/* Controls for showing iterations and initial entries */}
                                         <div className="flex justify-end items-center gap-2 mb-2 flex-wrap">
-                                   
+
                                             {drawState.iterationResults.length > 0 && (
                                                 <button
                                                     onClick={() => setDrawState(prev => ({ ...prev, showIterationResults: !prev.showIterationResults }))}
@@ -745,7 +756,7 @@ const Draw = () => {
                                             )}
                                         </div>
 
-                                        
+
 
                                         {/* Shuffle Iterations Display */}
                                         <AnimatePresence>
@@ -835,9 +846,24 @@ const Draw = () => {
                                                     ? `${drawState.diceResult} Rounds`
                                                     : null}
                                     </motion.div>
+                                    {drawState.verificationCode && drawState.winners.length > 0 && (
+                                        <motion.div
+                                            className=""
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ delay: 0.8 }}
+                                        >
+                                            <div className="flex justify-between gap-3 items-center text-sm">
+                                                <span className="text-black font-bold">Verification Code:</span>
+                                                <div className="flex items-center gap-2">
+                                                    <code className="font-mono text-yellow-600">{drawState.verificationCode}</code>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
                                 </div>
                                 <span className='text-xs'>
-                                    {new Date().toLocaleString('en-US', {
+                                    {currentTime.toLocaleString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
                                         year: 'numeric',

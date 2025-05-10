@@ -41,6 +41,7 @@ const Results = () => {
     const [copied, setCopied] = useState<string | null>(null)
     const [expandedDraw, setExpandedDraw] = useState<string | null>(null)
     const [selectedIteration, setSelectedIteration] = useState<{ drawId: string, iteration: number } | null>(null)
+    const [isResultsOpen, setIsResultsOpen] = useState(false)
 
     useEffect(() => {
         const fetchDraws = async () => {
@@ -127,16 +128,16 @@ const Results = () => {
     }
 
     return (
-        <div className="min-h-screen bg-white text-gray-800 py-8 px-4 md:px-8">
+        <div className="min-h-screen bg-white text-gray-800 py-4 px-3 md:px-6">
             <motion.div
-                className="w-full max-w-6xl mx-auto"
+                className="w-full max-w-5xl mx-auto"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
             >
-                <div className="mb-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-2">
                     <motion.h1
-                        className="text-3xl md:text-4xl font-bold cal-sans-regular"
+                        className="text-2xl md:text-3xl font-bold cal-sans-regular"
                         initial={{ x: -20, opacity: 0 }}
                         animate={{ x: 0, opacity: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
@@ -144,9 +145,9 @@ const Results = () => {
                         Draw Results
                     </motion.h1>
 
-                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+                    <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
                         <motion.div
-                            className="relative w-full md:w-64"
+                            className="relative w-full md:w-60"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 0.3, duration: 0.5 }}
@@ -161,7 +162,7 @@ const Results = () => {
                                 placeholder="Search by code or name..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 w-full bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600"
+                                className="pl-10 pr-2 py-1.5 w-full bg-gray-100 border border-gray-300 rounded-md text-gray-800 focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 text-sm"
                             />
                         </motion.div>
 
@@ -170,7 +171,7 @@ const Results = () => {
                             animate={{ x: 0, opacity: 1 }}
                             transition={{ delay: 0.3, duration: 0.5 }}
                         >
-                            <Link href="/draw" className="inline-block w-full md:w-auto text-center bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-medium">
+                            <Link href="/draw" className="inline-block w-full md:w-auto text-center bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md font-medium text-sm">
                                 New Draw
                             </Link>
                         </motion.div>
@@ -178,21 +179,21 @@ const Results = () => {
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
+                    <div className="flex justify-center py-8">
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-500"></div>
                     </div>
                 ) : error ? (
-                    <div className="text-red-500 text-center py-8">{error}</div>
+                    <div className="text-red-500 text-center py-6">{error}</div>
                 ) : filteredDraws.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-100 rounded-xl border border-gray-200">
+                    <div className="text-center py-8 bg-gray-100 rounded-xl border border-gray-200">
                         {searchTerm ? (
-                            <p className="text-gray-600 text-lg">No draws found matching "{searchTerm}"</p>
+                            <p className="text-gray-600">No draws found matching "{searchTerm}"</p>
                         ) : (
                             <>
-                                <p className="text-gray-600 text-lg">No draws have been performed yet.</p>
+                                <p className="text-gray-600">No draws have been performed yet.</p>
                                 <Link
                                     href="/draw"
-                                    className="mt-4 inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md font-medium"
+                                    className="mt-3 inline-block bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md font-medium text-sm"
                                 >
                                     Create Your First Draw
                                 </Link>
@@ -200,220 +201,179 @@ const Results = () => {
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-8">
+                    <div className="space-y-4">
                         {filteredDraws.map((draw) => (
                             <motion.div
                                 key={draw.id}
-                                className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
+                                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                            // transition={{ duration: 0.5 }}
-                            // whileHover={{ scale: 1.01 }}
                             >
-                                <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50">
-                                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                                <div className="p-3 border-b border-gray-200 bg-gray-50">
+                                    <div className="flex flex-col md:flex-row justify-between gap-2">
                                         <div>
-                                            <h2 className="text-xl md:text-2xl font-semibold text-yellow-600">
+                                            <h2 className="text-lg font-semibold text-yellow-600">
                                                 {draw.promo.name}
                                             </h2>
-                                            <p className="text-sm text-gray-500 mt-1">
+                                            <p className="text-xs text-gray-500 mt-0.5">
                                                 Created: {formatDate(draw.createdAt)}
                                             </p>
 
-                                            {/* Verification Code */}
+                                            {/* Verification Code - Compact */}
                                             {draw.verificationCode && (
-                                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                                <div className="mt-1 flex items-center gap-1 flex-wrap">
                                                     <span className="text-xs text-gray-500">Verification:</span>
-                                                    <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono text-yellow-600">
+                                                    <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded font-mono text-yellow-600">
                                                         {draw.verificationCode}
                                                     </code>
                                                     <button
                                                         onClick={() => handleCopy(draw.verificationCode)}
-                                                        className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-600"
+                                                        className="text-xs px-1.5 py-0.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-600"
                                                     >
                                                         {copied === draw.verificationCode ? "Copied!" : "Copy"}
                                                     </button>
                                                 </div>
                                             )}
+                                            <div>
+                                                <button className='cursor-pointer mt-4 text-xs text-gray-500 border border-gray-300 rounded-md px-2 py-1' onClick={() =>{
+                                                    setIsResultsOpen(!isResultsOpen)
+                                                }}> {  isResultsOpen ? 'Hide' : 'Show' } Results </button>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-wrap gap-2 items-center">
-                                            <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">
+                                        <div className="flex flex-wrap gap-1 items-center mt-1 md:mt-0">
+                                            <span className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
                                                 Rounds: {draw.numRounds}
                                             </span>
-                                            <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">
+                                            <span className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
                                                 Winners: {draw.winners.length}
                                             </span>
-                                            <span className={`px-2 py-1 rounded-md text-xs ${draw.usingQuantum ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
-                                                {draw.usingQuantum ? 'Quantum' : 'Standard'} RNG
+                                            <span className={`px-1.5 py-0.5 rounded text-xs ${draw.usingQuantum ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'}`}>
+                                                {draw.usingQuantum ? 'Quantum' : 'Standard'}
                                             </span>
 
-                                            {/* Add shuffle history button here in header */}
+                                            {/* Toggle button */}
                                             {draw.iterations && draw.iterations.length > 0 && (
                                                 <motion.button
-                                                    whileHover={{ scale: 1.05 }}
                                                     whileTap={{ scale: 0.95 }}
                                                     onClick={() => toggleDrawExpansion(draw.id)}
-                                                    className={`px-2 py-1 rounded-md text-xs border ${expandedDraw === draw.id
-                                                        ? 'bg-yellow-500 border-yellow-600 text-white font-medium'
-                                                        : 'border-yellow-400 bg-transparent text-yellow-600 hover:bg-yellow-50'
-                                                        }`}
+                                                    className={`px-1.5 py-0.5 rounded text-xs border ${
+                                                        expandedDraw === draw.id
+                                                            ? 'bg-yellow-500 border-yellow-600 text-white font-medium'
+                                                            : 'border-yellow-400 bg-transparent text-yellow-600 hover:bg-yellow-50'
+                                                    }`}
                                                 >
-                                                    {expandedDraw === draw.id ? 'Hide Rounds' : 'Show All Rounds'}
+                                                    {expandedDraw === draw.id ? 'Hide' : 'Show Rounds'}
                                                 </motion.button>
                                             )}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-4 md:p-6">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="text-lg font-medium text-gray-800">Results</h3>
 
-                                        {/* Round indicator - always visible */}
-                                        {draw.iterations && draw.iterations.length > 0 && (
-                                            <div className="bg-gray-100 px-3 py-1.5 rounded-md text-sm font-medium text-black dark:text-black">
-                                                {draw.numRounds} Rounds Completed
-                                            </div>
-                                        )}
-                                    </div>
 
-                                    {/* Shuffle progress display - simplified controls, always visible */}
-                                    {draw.iterations && draw.iterations.length > 0 && (
-                                        <div className="mb-6 overflow-hidden bg-gray-50 rounded-lg border border-gray-200 p-4">
-                                            <div className="flex justify-between items-center mb-3">
-                                                <h4 className="text-sm font-medium text-yellow-600">Each Round</h4>
-
-                                                <motion.button
-                                                    whileHover={{ scale: 1.05 }}
-                                                    whileTap={{ scale: 0.95 }}
-                                                    onClick={() => toggleDrawExpansion(draw.id)}
-                                                    className="text-xs px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-md"
-                                                >
-                                                    {expandedDraw === draw.id ? 'Hide Details' : 'Show Details'}
-                                                </motion.button>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="text-xs text-gray-600">Select Round:</span>
+                                {isResultsOpen && 
+                                <div className="p-3">
+                                    {/* Combined Header and Rounds */}
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-base font-medium text-gray-800">Results</h3>
+                                            {draw.iterations && draw.iterations.length > 0 && (
                                                 <select
                                                     value={selectedIteration?.iteration ?? ""}
                                                     onChange={(e) => {
                                                         if (e.target.value === "") return;
                                                         viewIteration(draw.id, parseInt(e.target.value));
+                                                        setExpandedDraw(draw.id);
                                                     }}
-                                                    className="px-3 py-1.5 text-xs rounded-md border border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                                                    className="px-2 py-1 text-xs rounded border border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-yellow-500"
                                                 >
-                                                    <option value="" disabled>Select a round</option>
+                                                    <option value="" disabled>Select round</option>
                                                     {draw.iterations
                                                         .sort((a, b) => a.iteration - b.iteration)
                                                         .map((iter) => (
-                                                            <option
-                                                                key={iter.id}
-                                                                value={iter.iteration}
-                                                            >
+                                                            <option key={iter.id} value={iter.iteration}>
                                                                 {iter.iteration === 0
-                                                                    ? 'Initial Order'
+                                                                    ? 'Initial'
                                                                     : iter.iteration === draw.numRounds
-                                                                        ? `Final (Round ${iter.iteration})`
+                                                                        ? `Final (${iter.iteration})`
                                                                         : `Round ${iter.iteration}`}
                                                             </option>
                                                         ))}
                                                 </select>
-                                            </div>
-
-                                            <AnimatePresence>
-                                                {expandedDraw === draw.id && selectedIteration?.drawId === draw.id && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, y: 10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: 10 }}
-                                                        transition={{ duration: 0.3 }}
-                                                    >
-                                                        <div className="flex justify-between items-center mb-3">
-                                                            <h5 className="text-sm font-medium text-gray-800 flex items-center gap-2">
-                                                                {selectedIteration.iteration === 0 ? (
-                                                                    <>
-                                                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-300 text-gray-700 text-xs">
-                                                                            0
-                                                                        </span>
-                                                                        Initial Order
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-yellow-500 text-white text-xs font-bold">
-                                                                            {selectedIteration.iteration}
-                                                                        </span>
-                                                                        After Round {selectedIteration.iteration}
-                                                                    </>
-                                                                )}
-                                                            </h5>
-                                                            {selectedIteration.iteration === draw.numRounds && (
-                                                                <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md font-medium">
-                                                                    Final Result
-                                                                </span>
-                                                            )}
-                                                        </div>
-
-                                                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
-                                                            <table className="w-full text-sm">
-                                                                <thead className="bg-gray-50">
-                                                                    <tr>
-                                                                        <th className="px-3 py-2 text-left font-medium text-gray-600">Position</th>
-                                                                        <th className="px-3 py-2 text-left font-medium text-gray-600">Entry</th>
-                                                                        {/* <th className="px-3 py-2 text-right font-medium text-gray-600">Status</th> */}
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    {draw.iterations
-                                                                        .find(i => i.iteration === selectedIteration.iteration)
-                                                                        ?.entries.map((entry, index) => {
-                                                                            // Determine if this entry is a winner and its rank
-                                                                            const isWinner = draw.winners.some(w => w.entry.name === entry);
-                                                                            const winnerRank = isWinner
-                                                                                ? draw.winners.find(w => w.entry.name === entry)?.rank
-                                                                                : null;
-
-                                                                            // Check if this is a potential winner (in top positions)
-                                                                            const isPotentialWinner = index < draw.winners.length;
-
-                                                                            return (
-                                                                                <tr key={index} className={`
-                                                                                    border-b border-gray-100 
-                                                                                    ${isWinner ? 'bg-yellow-50' : isPotentialWinner ? 'bg-yellow-50/30' : 'hover:bg-gray-50'}
-                                                                                `}>
-                                                                                    <td className="px-3 py-2 font-mono text-gray-500">#{index + 1}</td>
-                                                                                    <td className="px-3 py-2">
-                                                                                        <span className={isWinner ? 'text-yellow-600 font-medium' : ''}>
-                                                                                            {entry.replace(/-\d+$/, '')}
-                                                                                        </span>
-                                                                                    </td>
-                                                                                    {/* <td className="px-3 py-2 text-right">
-                                                                                        {isWinner && (
-                                                                                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">
-                                                                                                Winner #{winnerRank}
-                                                                                            </span>
-                                                                                        )}
-                                                                                       
-                                                                                    </td> */}
-                                                                                </tr>
-                                                                            );
-                                                                        })}
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
 
-                                    <h3 className="text-lg font-medium mb-3 text-gray-800">Winners</h3>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-sm">
-                                            <thead className="text-left text-gray-600 border-b border-gray-200">
+                                    {/* Shuffle details - simplified and more compact */}
+                                    <AnimatePresence>
+                                        {expandedDraw === draw.id && selectedIteration?.drawId === draw.id && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="mb-3 overflow-hidden bg-gray-50 rounded-lg border border-gray-200 text-sm"
+                                            >
+                                                <div className="p-2 border-b border-gray-200 bg-gray-100 flex justify-between items-center">
+                                                    <h5 className="text-xs font-medium text-gray-800 flex items-center gap-1">
+                                                        {selectedIteration.iteration === 0 ? (
+                                                            <>
+                                                                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-gray-300 text-gray-700 text-xs">0</span>
+                                                                Initial Order
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-yellow-500 text-white text-xs font-bold">{selectedIteration.iteration}</span>
+                                                                Round {selectedIteration.iteration}
+                                                            </>
+                                                        )}
+                                                    </h5>
+                                                    {selectedIteration.iteration === draw.numRounds && (
+                                                        <span className="text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded font-medium">Final</span>
+                                                    )}
+                                                </div>
+
+                                                <div className="overflow-auto max-h-40">
+                                                    <table className="w-full text-xs">
+                                                        <thead className="bg-gray-50 sticky top-0">
+                                                            <tr>
+                                                                <th className="px-2 py-1 text-left font-medium text-gray-600">#</th>
+                                                                <th className="px-2 py-1 text-left font-medium text-gray-600">Entry</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {draw.iterations
+                                                                .find(i => i.iteration === selectedIteration.iteration)
+                                                                ?.entries.map((entry, index) => {
+                                                                    const isWinner = draw.winners.some(w => w.entry.name === entry);
+                                                                    const isPotentialWinner = index < draw.winners.length;
+                                                                    return (
+                                                                        <tr key={index} className={`border-b border-gray-100 
+                                                                            ${isWinner ? 'bg-yellow-50' : isPotentialWinner ? 'bg-yellow-50/30' : 'hover:bg-gray-50'}`}>
+                                                                            <td className="px-2 py-1 font-mono text-gray-500">{index + 1}</td>
+                                                                            <td className="px-2 py-1">
+                                                                                <span className={isWinner ? 'text-yellow-600 font-medium' : ''}>
+                                                                                    {entry.replace(/-\d+$/, '')}
+                                                                                </span>
+                                                                            </td>
+                                                                        </tr>
+                                                                    );
+                                                                })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    {/* Winners table - compact */}
+                                    <h3 className="text-base font-medium mb-2 text-gray-800">Winners</h3>
+                                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                                        <table className="w-full text-xs">
+                                            <thead className="text-left text-gray-600 bg-gray-50 border-b border-gray-200">
                                                 <tr>
-                                                    <th className="px-4 py-2">Rank</th>
-                                                    <th className="px-4 py-2">Entry</th>
+                                                    <th className="px-2 py-1.5">#</th>
+                                                    <th className="px-2 py-1.5">Entry</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -421,18 +381,20 @@ const Results = () => {
                                                     .sort((a, b) => a.rank - b.rank)
                                                     .map((winner) => (
                                                         <tr key={winner.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                                            <td className="px-4 py-3 font-medium">
-                                                                <span className="flex items-center justify-center w-6 h-6 rounded-full bg-yellow-500 text-white font-bold">
+                                                            <td className="px-2 py-1.5">
+                                                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-yellow-500 text-white font-bold text-xs">
                                                                     {winner.rank}
                                                                 </span>
                                                             </td>
-                                                            <td className="px-4 py-3">{winner.entry.name}</td>
+                                                            <td className="px-2 py-1.5">{winner.entry.name}</td>
                                                         </tr>
                                                     ))}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
+                                }
+
                             </motion.div>
                         ))}
                     </div>
