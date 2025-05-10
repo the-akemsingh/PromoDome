@@ -41,8 +41,8 @@ const EntryTable = ({ entries, winners = [], title, numWinners }: EntryTableProp
               return (
                 <motion.tr
                   key={`${id}-${entry}`}
-                  // className={isWinner ? 'bg-white' : ''}
                   whileHover={{ backgroundColor: 'rgba(90, 90, 90, 0.1)' }}
+                  className='border-b border-gray-600'
                 >
                   <td className="px-3 py-2 whitespace-nowrap text-black dark:text-black text-sm ">
                     {id}
