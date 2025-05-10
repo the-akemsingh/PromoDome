@@ -24,9 +24,9 @@ interface Draw {
     usingQuantum: boolean
     createdAt: Date
     verificationCode: string
-    promo: { 
+    promo: {
         name: string
-        isReset?: boolean 
+        isReset?: boolean
     }
     winners: Winner[]
     iterations: ShuffleIteration[]
@@ -207,8 +207,8 @@ const Results = () => {
                                 className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                // transition={{ duration: 0.5 }}
-                                // whileHover={{ scale: 1.01 }}
+                            // transition={{ duration: 0.5 }}
+                            // whileHover={{ scale: 1.01 }}
                             >
                                 <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50">
                                     <div className="flex flex-col md:flex-row justify-between gap-4">
@@ -254,8 +254,8 @@ const Results = () => {
                                                     whileTap={{ scale: 0.95 }}
                                                     onClick={() => toggleDrawExpansion(draw.id)}
                                                     className={`px-2 py-1 rounded-md text-xs border ${expandedDraw === draw.id
-                                                            ? 'bg-yellow-500 border-yellow-600 text-white font-medium'
-                                                            : 'border-yellow-400 bg-transparent text-yellow-600 hover:bg-yellow-50'
+                                                        ? 'bg-yellow-500 border-yellow-600 text-white font-medium'
+                                                        : 'border-yellow-400 bg-transparent text-yellow-600 hover:bg-yellow-50'
                                                         }`}
                                                 >
                                                     {expandedDraw === draw.id ? 'Hide Rounds' : 'Show All Rounds'}
@@ -307,14 +307,14 @@ const Results = () => {
                                                     {draw.iterations
                                                         .sort((a, b) => a.iteration - b.iteration)
                                                         .map((iter) => (
-                                                            <option 
-                                                                key={iter.id} 
+                                                            <option
+                                                                key={iter.id}
                                                                 value={iter.iteration}
                                                             >
-                                                                {iter.iteration === 0 
-                                                                    ? 'Initial Order' 
-                                                                    : iter.iteration === draw.numRounds 
-                                                                        ? `Final (Round ${iter.iteration})` 
+                                                                {iter.iteration === 0
+                                                                    ? 'Initial Order'
+                                                                    : iter.iteration === draw.numRounds
+                                                                        ? `Final (Round ${iter.iteration})`
                                                                         : `Round ${iter.iteration}`}
                                                             </option>
                                                         ))}

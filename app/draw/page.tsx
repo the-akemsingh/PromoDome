@@ -774,7 +774,6 @@ const Draw = () => {
                                     <motion.div
                                         className="rounds-display text-xs md:text-sm px-2 py-1 font-bold text-black rounded-md"
                                         initial={{ scale: 1 }}
-                                        animate={isRolling || isShuffling ? { scale: [1, 1.05, 1], transition: { repeat: Infinity, duration: 1.5 } } : {}}
                                         whileHover={{ scale: 1.05 }}
                                     >
                                         {isRolling
@@ -807,7 +806,7 @@ const Draw = () => {
                     <div className="flex flex-wrap gap-4 md:gap-10 justify-center items-center">
                         <div className="relative">
                             <img src="/start-button.svg" alt="Start Promo" width={160} height={80} className="w-32 md:w-40 lg:w-48" />
-                            <div style={{ fontFamily: 'CostaRica' }} onClick={startPromo} className="absolute inset-0 flex items-center justify-center text-sm md:text-lg lg:text-xl font-bold cursor-pointer">
+                            <div style={{ fontFamily: 'CostaRica' }} onClick={startPromo} className="absolute inset-0 text-black flex items-center justify-center text-sm md:text-lg lg:text-xl font-bold cursor-pointer">
                                 Start Promo
                             </div>
                         </div>
