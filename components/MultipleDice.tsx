@@ -6,9 +6,10 @@ interface MultipleDiceProps {
   isRolling: boolean
   onRollComplete: (total: number) => void
   diceCount: number
+  reset?: boolean
 }
 
-const MultipleDice = ({ isRolling, onRollComplete, diceCount }: MultipleDiceProps) => {
+const MultipleDice = ({ isRolling, onRollComplete, diceCount, reset }: MultipleDiceProps) => {
   // Initialize with placeholder values (1 to diceCount) to ensure dice are visible initially
   const [diceValues, setDiceValues] = useState<number[]>(() =>
     Array(diceCount).fill(0).map((_, i) => i % 6 + 1)
@@ -17,12 +18,13 @@ const MultipleDice = ({ isRolling, onRollComplete, diceCount }: MultipleDiceProp
   const [useDebug, setUseDebug] = useState<boolean>(true) // Start with debug mode on
   const [use2D, setUse2D] = useState<boolean>(false) // Option to use simple 2D dice
 
-  // Update dice array when diceCount changes
+  // Update dice array when diceCount changes or reset is triggered
   useEffect(() => {
     // Initialize all dice to show face value 1
     const initialValues = Array(diceCount).fill(1)
     setDiceValues(initialValues)
-  }, [diceCount])
+    setTotal(diceCount) // Set total to match the number of dice (since each shows 1)
+  }, [diceCount, reset]) // Add reset to dependencies
 
   // Generate random dice values when isRolling changes
   useEffect(() => {

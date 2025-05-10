@@ -38,7 +38,8 @@ const Draw = () => {
         showIterationResults: false,
         selectedIteration: null as number | null,
         currentDrawId: null as string | null,
-        savingError: null as string | null
+        savingError: null as string | null,
+        resetDice: false
     });
 
     const drawIdRef = useRef<string | null>(null);
@@ -446,9 +447,15 @@ const Draw = () => {
             showIterationResults: false,
             selectedIteration: null,
             currentDrawId: null,
-            savingError: null
+            savingError: null,
+            resetDice: true
         });
         drawIdRef.current = null;
+
+        // Reset the resetDice flag after a short delay
+        setTimeout(() => {
+            setDrawState(prev => ({ ...prev, resetDice: false }));
+        }, 100);
     }, [drawState.winners.length]);
 
     return (
@@ -632,6 +639,7 @@ const Draw = () => {
                                                 isRolling={drawState.isRolling}
                                                 onRollComplete={handleRollComplete}
                                                 diceCount={drawState.diceCount}
+                                                reset={drawState.resetDice}
                                             />
                                         </motion.div>
                                     )}
