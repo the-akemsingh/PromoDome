@@ -197,7 +197,7 @@ const Draw = () => {
 
         // Store mapping of internal entries to display entries
         const entryMapping = new Map<string, string>();
-        internalEntries.forEach((entry, index) => {
+        internalEntries.forEach((entry) => {
             // If the entry has a suffix (contains '-'), extract the original entry
             if (entry.includes('-')) {
                 const originalEntry = entry.substring(0, entry.lastIndexOf('-'));
@@ -270,43 +270,56 @@ const Draw = () => {
         }
 
         try {
-            // Perform shuffling with animation
-            for (let i = 0; i < drawState.diceResult; i++) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
+            // Process each round sequentially but with minimal delay
+            const totalRounds = drawState.diceResult;
+            
+            // Ensure totalRounds is a valid number
+            if (!totalRounds || isNaN(totalRounds) || totalRounds <= 0) {
+                throw new Error("Invalid number of rounds");
+            }
+            
+            // Create an array to store all iterations
+            const allIterations = [{
+                iteration: 0,
+                entries: [...displayShuffled] // Initial state
+            }];
+            
+            // Process each round one by one
+            for (let i = 0; i < totalRounds; i++) {
+                // Perform the shuffle
                 currentShuffled = await multiShuffle(currentShuffled, 3);
-                setDrawState(prev => ({
-                    ...prev,
-                    currentRound: i + 1,
-                    shuffledEntries: [...currentShuffled]
-                }));
-
-                // Save this iteration result
-                const thisIteration = {
+                
+                // Store this iteration result
+                const iterationResult = {
                     iteration: i + 1,
                     entries: [...currentShuffled]
                 };
+                
+                // Add to our local array
+                allIterations.push(iterationResult);
+                
+                // Update UI for each round
                 setDrawState(prev => ({
                     ...prev,
-                    iterationResults: [...prev.iterationResults, thisIteration]
+                    currentRound: i + 1,
+                    shuffledEntries: [...currentShuffled],
+                    // Replace the entire iterationResults array to avoid state inconsistencies
+                    iterationResults: [...allIterations]
                 }));
-
-                // Save each iteration to the database as it happens
-                try {
-                    console.log(`Saving iteration ${i + 1} for draw: ${drawId}`);
-                    const iterResult = await addIteration({
-                        drawId,
-                        iteration: i + 1,
-                        entries: currentShuffled
-                    });
-
-                    if (iterResult.success) {
-                        console.log(`Iteration ${i + 1} saved successfully with ID: ${iterResult.iterationId}`);
-                    } else {
-                        console.error(`Failed to save iteration ${i + 1}:`, iterResult.error);
-                    }
-                } catch (error) {
-                    console.error(`Error saving iteration ${i + 1}:`, error);
+                
+                // Very minimal delay for visual feedback (far less than original 300ms)
+                if (i < totalRounds - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
+                
+                // Save iteration to DB without waiting for response to keep things fast
+                addIteration({
+                    drawId: drawId!,
+                    iteration: i + 1,
+                    entries: currentShuffled
+                }).catch(error => {
+                    console.error(`Error saving iteration ${i + 1}:`, error);
+                });
             }
         } catch (error) {
             console.error("Error during shuffle:", error);
@@ -349,9 +362,12 @@ const Draw = () => {
                 }
             }
 
-            // Auto-select the final iteration for better user experience
+            // Finally set everything up correctly after shuffle completes
             setDrawState(prev => ({
                 ...prev,
+                currentRound: drawState.diceResult || 0,
+                isShuffling: false,
+                // Make sure selectedIteration points to the final round
                 selectedIteration: drawState.diceResult || 0,
                 showIterationResults: true
             }));
@@ -456,6 +472,8 @@ const Draw = () => {
         setTimeout(() => {
             setDrawState(prev => ({ ...prev, resetDice: false }));
         }, 100);
+
+        window.location.reload();
     }, [drawState.winners.length]);
 
     // Add a new state for the current time
@@ -466,7 +484,7 @@ const Draw = () => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
         }, 1000);
-        
+
         // Cleanup function to clear the interval when component unmounts
         return () => clearInterval(timer);
     }, []);
@@ -744,14 +762,17 @@ const Draw = () => {
                                         className="space-y-4"
                                     >
                                         {/* Controls for showing iterations and initial entries */}
-                                        <div className="flex justify-end items-center gap-2 mb-2 flex-wrap">
+                                        <div className="flex justify-between items-center gap-2 mb-2 flex-wrap">
 
+                                            <span className="text-bold p-2 text-black">
+                                                {drawState.isShuffling ? "Randomizing..." : "Randomized"}
+                                            </span>
                                             {drawState.iterationResults.length > 0 && (
                                                 <button
                                                     onClick={() => setDrawState(prev => ({ ...prev, showIterationResults: !prev.showIterationResults }))}
-                                                    className="text-xs flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border border-gray-300 text-black dark:text-black hover:bg-gray-200"
+                                                    className="text-xs flex items-center gap-1 px-2 py-1 bg-gray-100 rounded border mr-2 border-gray-300 text-black dark:text-black hover:bg-gray-200"
                                                 >
-                                                    <span>{drawState.showIterationResults ? 'Hide' : 'Show'} Each Round</span>
+                                                    <span className=''>{drawState.showIterationResults ? 'Hide' : 'Show'} Each Round</span>
                                                 </button>
                                             )}
                                         </div>
@@ -771,27 +792,83 @@ const Draw = () => {
 
                                                     {/* Iteration selector */}
                                                     <div className="flex flex-wrap gap-2 mb-3">
-                                                        {drawState.iterationResults.map((iter) => (
-                                                            <button
-                                                                key={iter.iteration}
-                                                                onClick={() => setDrawState(prev => ({ ...prev, selectedIteration: iter.iteration }))}
-                                                                className={`px-2 py-1 text-black dark:text-black text-xs rounded ${drawState.selectedIteration === iter.iteration
-                                                                    ? 'bg-yellow-500 text-black font-medium'
-                                                                    : iter.iteration === 0
-                                                                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                                        : iter.iteration === drawState.diceResult
-                                                                            ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border border-yellow-500'
+                                                        {drawState.iterationResults.length > 0 && (
+                                                            <>
+                                                                {/* Always show Initial button */}
+                                                                <button
+                                                                    key="initial"
+                                                                    onClick={() => setDrawState(prev => ({ ...prev, selectedIteration: 0 }))}
+                                                                    className={`px-2 py-1 text-black dark:text-black text-xs rounded ${
+                                                                        drawState.selectedIteration === 0
+                                                                            ? 'bg-yellow-500 text-black font-medium'
                                                                             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                                                     }`}
-                                                            >
-                                                                {iter.iteration === 0
-                                                                    ? 'Initial'
-                                                                    : iter.iteration === drawState.diceResult
-                                                                        ? `Final (Round ${iter.iteration})`
-                                                                        : `Round ${iter.iteration}`
-                                                                }
-                                                            </button>
-                                                        ))}
+                                                                >
+                                                                    Initial
+                                                                </button>
+                                                                
+                                                                {/* For many rounds, show a limited set with ellipsis */}
+                                                                {drawState.iterationResults.length > 12 ? (
+                                                                    <>
+                                                                        {/* First few rounds */}
+                                                                        {drawState.iterationResults.slice(1, 4).map((iter) => (
+                                                                            <button
+                                                                                key={iter.iteration}
+                                                                                onClick={() => setDrawState(prev => ({ ...prev, selectedIteration: iter.iteration }))}
+                                                                                className={`px-2 py-1 text-black dark:text-black text-xs rounded ${
+                                                                                    drawState.selectedIteration === iter.iteration
+                                                                                        ? 'bg-yellow-500 text-black font-medium'
+                                                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                                }`}
+                                                                            >
+                                                                                Round {iter.iteration}
+                                                                            </button>
+                                                                        ))}
+                                                                        
+                                                                        {/* Ellipsis indicator */}
+                                                                        <span className="px-2 py-1 text-gray-500">...</span>
+                                                                        
+                                                                        {/* Last few rounds */}
+                                                                        {drawState.iterationResults.slice(-4).map((iter) => (
+                                                                            <button
+                                                                                key={iter.iteration}
+                                                                                onClick={() => setDrawState(prev => ({ ...prev, selectedIteration: iter.iteration }))}
+                                                                                className={`px-2 py-1 text-black dark:text-black text-xs rounded ${
+                                                                                    drawState.selectedIteration === iter.iteration
+                                                                                        ? 'bg-yellow-500 text-black font-medium'
+                                                                                        : iter.iteration === drawState.diceResult
+                                                                                            ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border border-yellow-500'
+                                                                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                                }`}
+                                                                            >
+                                                                                {iter.iteration === drawState.diceResult 
+                                                                                    ? `Final (Round ${iter.iteration})` 
+                                                                                    : `Round ${iter.iteration}`}
+                                                                            </button>
+                                                                        ))}
+                                                                    </>
+                                                                ) : (
+                                                                    /* For fewer rounds, show all rounds */
+                                                                    drawState.iterationResults.slice(1).map((iter) => (
+                                                                        <button
+                                                                            key={iter.iteration}
+                                                                            onClick={() => setDrawState(prev => ({ ...prev, selectedIteration: iter.iteration }))}
+                                                                            className={`px-2 py-1 text-black dark:text-black text-xs rounded ${
+                                                                                drawState.selectedIteration === iter.iteration
+                                                                                    ? 'bg-yellow-500 text-black font-medium'
+                                                                                    : iter.iteration === drawState.diceResult
+                                                                                        ? 'bg-yellow-200 text-yellow-800 hover:bg-yellow-300 border border-yellow-500'
+                                                                                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                                            }`}
+                                                                        >
+                                                                            {iter.iteration === drawState.diceResult 
+                                                                                ? `Final (Round ${iter.iteration})` 
+                                                                                : `Round ${iter.iteration}`}
+                                                                        </button>
+                                                                    ))
+                                                                )}
+                                                            </>
+                                                        )}
                                                     </div>
 
                                                     {/* Selected iteration results */}

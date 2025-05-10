@@ -41,7 +41,7 @@ const Results = () => {
     const [copied, setCopied] = useState<string | null>(null)
     const [expandedDraw, setExpandedDraw] = useState<string | null>(null)
     const [selectedIteration, setSelectedIteration] = useState<{ drawId: string, iteration: number } | null>(null)
-    const [isResultsOpen, setIsResultsOpen] = useState(false)
+    const [openResultsMap, setOpenResultsMap] = useState<Record<string, boolean>>({})
 
     useEffect(() => {
         const fetchDraws = async () => {
@@ -102,6 +102,13 @@ const Results = () => {
         navigator.clipboard.writeText(code)
         setCopied(code)
         setTimeout(() => setCopied(null), 2000)
+    }
+
+    const toggleResults = (drawId: string) => {
+        setOpenResultsMap(prev => ({
+            ...prev,
+            [drawId]: !prev[drawId]
+        }));
     }
 
     const toggleDrawExpansion = (drawId: string) => {
@@ -205,7 +212,7 @@ const Results = () => {
                         {filteredDraws.map((draw) => (
                             <motion.div
                                 key={draw.id}
-                                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm"
+                                className="bg-white rounded-lg border border-gray-400 overflow-hidden shadow-sm"
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                             >
@@ -235,9 +242,9 @@ const Results = () => {
                                                 </div>
                                             )}
                                             <div>
-                                                <button className='cursor-pointer mt-4 text-xs text-gray-500 border border-gray-300 rounded-md px-2 py-1' onClick={() =>{
-                                                    setIsResultsOpen(!isResultsOpen)
-                                                }}> {  isResultsOpen ? 'Hide' : 'Show' } Results </button>
+                                                <button className='cursor-pointer mt-4 text-xs text-gray-500 border border-gray-300 rounded-md px-2 py-1' onClick={() => {
+                                                    toggleResults(draw.id)
+                                                }}> {openResultsMap[draw.id] ? 'Hide' : 'Show'} Results </button>
                                             </div>
                                         </div>
                                         <div className="flex flex-wrap gap-1 items-center mt-1 md:mt-0">
@@ -256,11 +263,10 @@ const Results = () => {
                                                 <motion.button
                                                     whileTap={{ scale: 0.95 }}
                                                     onClick={() => toggleDrawExpansion(draw.id)}
-                                                    className={`px-1.5 py-0.5 rounded text-xs border ${
-                                                        expandedDraw === draw.id
+                                                    className={`px-1.5 py-0.5 rounded text-xs border ${expandedDraw === draw.id
                                                             ? 'bg-yellow-500 border-yellow-600 text-white font-medium'
                                                             : 'border-yellow-400 bg-transparent text-yellow-600 hover:bg-yellow-50'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     {expandedDraw === draw.id ? 'Hide' : 'Show Rounds'}
                                                 </motion.button>
@@ -271,128 +277,128 @@ const Results = () => {
 
 
 
-                                {isResultsOpen && 
-                                <div className="p-3">
-                                    {/* Combined Header and Rounds */}
-                                    <div className="flex justify-between items-center mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-base font-medium text-gray-800">Results</h3>
-                                            {draw.iterations && draw.iterations.length > 0 && (
-                                                <select
-                                                    value={selectedIteration?.iteration ?? ""}
-                                                    onChange={(e) => {
-                                                        if (e.target.value === "") return;
-                                                        viewIteration(draw.id, parseInt(e.target.value));
-                                                        setExpandedDraw(draw.id);
-                                                    }}
-                                                    className="px-2 py-1 text-xs rounded border border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                                {openResultsMap[draw.id] &&
+                                    <div className="p-3">
+                                        {/* Combined Header and Rounds */}
+                                        <div className="flex justify-between items-center mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="text-base font-medium text-gray-800">Results</h3>
+                                                {draw.iterations && draw.iterations.length > 0 && (
+                                                    <select
+                                                        value={selectedIteration?.iteration ?? ""}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === "") return;
+                                                            viewIteration(draw.id, parseInt(e.target.value));
+                                                            setExpandedDraw(draw.id);
+                                                        }}
+                                                        className="px-2 py-1 text-xs rounded border border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-yellow-500"
+                                                    >
+                                                        <option value="" disabled>Select round</option>
+                                                        {draw.iterations
+                                                            .sort((a, b) => a.iteration - b.iteration)
+                                                            .map((iter) => (
+                                                                <option key={iter.id} value={iter.iteration}>
+                                                                    {iter.iteration === 0
+                                                                        ? 'Initial'
+                                                                        : iter.iteration === draw.numRounds
+                                                                            ? `Final (${iter.iteration})`
+                                                                            : `Round ${iter.iteration}`}
+                                                                </option>
+                                                            ))}
+                                                    </select>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Shuffle details - simplified and more compact */}
+                                        <AnimatePresence>
+                                            {expandedDraw === draw.id && selectedIteration?.drawId === draw.id && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: 'auto' }}
+                                                    exit={{ opacity: 0, height: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="mb-3 overflow-hidden bg-gray-50 rounded-lg border border-gray-200 text-sm"
                                                 >
-                                                    <option value="" disabled>Select round</option>
-                                                    {draw.iterations
-                                                        .sort((a, b) => a.iteration - b.iteration)
-                                                        .map((iter) => (
-                                                            <option key={iter.id} value={iter.iteration}>
-                                                                {iter.iteration === 0
-                                                                    ? 'Initial'
-                                                                    : iter.iteration === draw.numRounds
-                                                                        ? `Final (${iter.iteration})`
-                                                                        : `Round ${iter.iteration}`}
-                                                            </option>
-                                                        ))}
-                                                </select>
+                                                    <div className="p-2 border-b border-gray-200 bg-gray-100 flex justify-between items-center">
+                                                        <h5 className="text-xs font-medium text-gray-800 flex items-center gap-1">
+                                                            {selectedIteration.iteration === 0 ? (
+                                                                <>
+                                                                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-gray-300 text-gray-700 text-xs">0</span>
+                                                                    Initial Order
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <span className="flex items-center justify-center w-4 h-4 rounded-full bg-yellow-500 text-white text-xs font-bold">{selectedIteration.iteration}</span>
+                                                                    Round {selectedIteration.iteration}
+                                                                </>
+                                                            )}
+                                                        </h5>
+                                                        {selectedIteration.iteration === draw.numRounds && (
+                                                            <span className="text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded font-medium">Final</span>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="overflow-auto max-h-40">
+                                                        <table className="w-full text-xs">
+                                                            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+                                                                <tr>
+                                                                    <th className="px-2 py-1 text-left font-medium text-gray-600">#</th>
+                                                                    <th className="px-2 py-1 text-left font-medium text-gray-600">Entry</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {draw.iterations
+                                                                    .find(i => i.iteration === selectedIteration.iteration)
+                                                                    ?.entries.map((entry, index) => {
+                                                                        const isWinner = draw.winners.some(w => w.entry.name === entry);
+                                                                        const isPotentialWinner = index < draw.winners.length;
+                                                                        return (
+                                                                            <tr key={index} className={`border-b border-gray-300 
+                                                                          `}>
+                                                                                <td className="px-2 py-1 font-mono text-gray-500">{index + 1}</td>
+                                                                                <td className="px-2 py-1">
+                                                                                    <span className={isWinner ? 'text-yellow-600 font-medium' : ''}>
+                                                                                        {entry.replace(/-\d+$/, '')}
+                                                                                    </span>
+                                                                                </td>
+                                                                            </tr>
+                                                                        );
+                                                                    })}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </motion.div>
                                             )}
+                                        </AnimatePresence>
+
+                                        {/* Winners table - compact */}
+                                        <h3 className="text-base font-medium mb-2 text-gray-800">Winners</h3>
+                                        <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                                            <table className="w-full text-xs">
+                                                <thead className="text-left text-gray-600 bg-gray-50 border-b border-gray-200">
+                                                    <tr>
+                                                        <th className="px-2 py-1.5">#</th>
+                                                        <th className="px-2 py-1.5">Entry</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {draw.winners
+                                                        .sort((a, b) => a.rank - b.rank)
+                                                        .map((winner) => (
+                                                            <tr key={winner.id} className="border-b border-gray-200 hover:bg-gray-50">
+                                                                <td className="px-2 py-1.5">
+                                                                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-yellow-500 text-white font-bold text-xs">
+                                                                        {winner.rank}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-2 py-1.5">{winner.entry.name}</td>
+                                                            </tr>
+                                                        ))}
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
-
-                                    {/* Shuffle details - simplified and more compact */}
-                                    <AnimatePresence>
-                                        {expandedDraw === draw.id && selectedIteration?.drawId === draw.id && (
-                                            <motion.div
-                                                initial={{ opacity: 0, height: 0 }}
-                                                animate={{ opacity: 1, height: 'auto' }}
-                                                exit={{ opacity: 0, height: 0 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="mb-3 overflow-hidden bg-gray-50 rounded-lg border border-gray-200 text-sm"
-                                            >
-                                                <div className="p-2 border-b border-gray-200 bg-gray-100 flex justify-between items-center">
-                                                    <h5 className="text-xs font-medium text-gray-800 flex items-center gap-1">
-                                                        {selectedIteration.iteration === 0 ? (
-                                                            <>
-                                                                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-gray-300 text-gray-700 text-xs">0</span>
-                                                                Initial Order
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-yellow-500 text-white text-xs font-bold">{selectedIteration.iteration}</span>
-                                                                Round {selectedIteration.iteration}
-                                                            </>
-                                                        )}
-                                                    </h5>
-                                                    {selectedIteration.iteration === draw.numRounds && (
-                                                        <span className="text-xs px-1.5 py-0.5 bg-yellow-100 text-yellow-700 rounded font-medium">Final</span>
-                                                    )}
-                                                </div>
-
-                                                <div className="overflow-auto max-h-40">
-                                                    <table className="w-full text-xs">
-                                                        <thead className="bg-gray-50 sticky top-0">
-                                                            <tr>
-                                                                <th className="px-2 py-1 text-left font-medium text-gray-600">#</th>
-                                                                <th className="px-2 py-1 text-left font-medium text-gray-600">Entry</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {draw.iterations
-                                                                .find(i => i.iteration === selectedIteration.iteration)
-                                                                ?.entries.map((entry, index) => {
-                                                                    const isWinner = draw.winners.some(w => w.entry.name === entry);
-                                                                    const isPotentialWinner = index < draw.winners.length;
-                                                                    return (
-                                                                        <tr key={index} className={`border-b border-gray-100 
-                                                                            ${isWinner ? 'bg-yellow-50' : isPotentialWinner ? 'bg-yellow-50/30' : 'hover:bg-gray-50'}`}>
-                                                                            <td className="px-2 py-1 font-mono text-gray-500">{index + 1}</td>
-                                                                            <td className="px-2 py-1">
-                                                                                <span className={isWinner ? 'text-yellow-600 font-medium' : ''}>
-                                                                                    {entry.replace(/-\d+$/, '')}
-                                                                                </span>
-                                                                            </td>
-                                                                        </tr>
-                                                                    );
-                                                                })}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-
-                                    {/* Winners table - compact */}
-                                    <h3 className="text-base font-medium mb-2 text-gray-800">Winners</h3>
-                                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                                        <table className="w-full text-xs">
-                                            <thead className="text-left text-gray-600 bg-gray-50 border-b border-gray-200">
-                                                <tr>
-                                                    <th className="px-2 py-1.5">#</th>
-                                                    <th className="px-2 py-1.5">Entry</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {draw.winners
-                                                    .sort((a, b) => a.rank - b.rank)
-                                                    .map((winner) => (
-                                                        <tr key={winner.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                                            <td className="px-2 py-1.5">
-                                                                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-yellow-500 text-white font-bold text-xs">
-                                                                    {winner.rank}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-2 py-1.5">{winner.entry.name}</td>
-                                                        </tr>
-                                                    ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
                                 }
 
                             </motion.div>
