@@ -294,17 +294,23 @@ const Results = () => {
                                                         className="px-2 py-1 text-xs rounded border border-gray-300 bg-white focus:outline-none focus:ring-1 focus:ring-yellow-500"
                                                     >
                                                         <option value="" disabled>Select round</option>
-                                                        {draw.iterations
-                                                            .sort((a, b) => a.iteration - b.iteration)
-                                                            .map((iter) => (
-                                                                <option key={iter.id} value={iter.iteration}>
-                                                                    {iter.iteration === 0
-                                                                        ? 'Initial'
-                                                                        : iter.iteration === draw.numRounds
-                                                                            ? `Final (${iter.iteration})`
-                                                                            : `Round ${iter.iteration}`}
-                                                                </option>
-                                                            ))}
+                                                        {/* Filter out duplicate iterations by iteration number */}
+                                                        {Array.from(
+                                                            // Use a Map to deduplicate iterations by iteration number
+                                                            new Map(
+                                                                draw.iterations
+                                                                    .sort((a, b) => a.iteration - b.iteration)
+                                                                    .map(iter => [iter.iteration, iter])
+                                                            ).values()
+                                                        ).map((iter) => (
+                                                            <option key={iter.id} value={iter.iteration}>
+                                                                {iter.iteration === 0
+                                                                    ? 'Initial'
+                                                                    : iter.iteration === draw.numRounds
+                                                                        ? `Final (${iter.iteration})`
+                                                                        : `Round ${iter.iteration}`}
+                                                            </option>
+                                                        ))}
                                                     </select>
                                                 )}
                                             </div>

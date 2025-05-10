@@ -180,7 +180,7 @@ const Draw = () => {
             return;
         }
 
-        // Reset state before starting
+        // Reset state and START ANIMATION IMMEDIATELY
         setDrawState(prev => ({
             ...prev,
             promoStarted: true,
@@ -189,7 +189,8 @@ const Draw = () => {
             winners: [],
             currentRound: 0,
             shuffleError: null,
-            iterationResults: []
+            iterationResults: [],
+            saveStatus: "Creating draw..."
         }));
 
         // Initialize with internal entries (which now have suffixes for duplicates)
@@ -209,6 +210,8 @@ const Draw = () => {
 
         // For display, convert internal entries to display entries
         const displayShuffled = currentShuffled.map(entry => entryMapping.get(entry) || entry);
+        
+        // Set initial shuffle state IMMEDIATELY
         setDrawState(prev => ({
             ...prev,
             shuffledEntries: displayShuffled
@@ -219,71 +222,97 @@ const Draw = () => {
             iteration: 0,
             entries: [...displayShuffled]
         };
+        
+        // Create a Map to store iteration results by iteration number to prevent duplicates
+        const iterationResultsMap = new Map<number, { iteration: number, entries: string[] }>();
+        iterationResultsMap.set(0, initialIteration);
+        
         setDrawState(prev => ({
             ...prev,
             iterationResults: [initialIteration]
         }));
+        
+        // Create an in-memory queue for storing iterations until drawId is available
+        const iterationQueue: { iteration: number, entries: string[] }[] = [];
+        // Track which iterations have been saved to prevent duplicates
+        const savedIterations = new Set<number>();
 
-        // Create draw with display entries (without suffixes)
+        // Start database operations IN PARALLEL with visual shuffling
         let drawId: string | null = null;
-        try {
-            setDrawState(prev => ({ ...prev, saveStatus: "Creating draw..." }));
-            const result = await createDraw({
-                promoTitle: drawState.promoTitle.trim(),
-                entries: displayShuffled, // Use display entries for the database
-                numRounds: drawState.diceResult,
-                shuffleCount: 3,
-                usingQuantum: drawState.usingQuantum
-            });
+        const createDrawPromise = (async (): Promise<string | null> => {
+            try {
+                const result = await createDraw({
+                    promoTitle: drawState.promoTitle.trim(),
+                    entries: displayShuffled, // Use display entries for the database
+                    numRounds: drawState.diceResult!,
+                    shuffleCount: 3,
+                    usingQuantum: drawState.usingQuantum
+                });
 
-            if (!result.success || !result.drawId) {
+                if (!result.success || !result.drawId) {
+                    setDrawState(prev => ({
+                        ...prev,
+                        saveStatus: `Error: ${result.error || "Failed to create draw"}`,
+                        savingError: result.error || "Failed to create draw"
+                    }));
+                    return null;
+                }
+
+                // Update state and ref
+                drawId = result.drawId;
+                console.log("Draw created successfully with ID:", drawId);
+                drawIdRef.current = drawId;
                 setDrawState(prev => ({
                     ...prev,
-                    saveStatus: `Error: ${result.error || "Failed to create draw"}`,
-                    savingError: result.error || "Failed to create draw"
+                    currentDrawId: drawId,
+                    verificationCode: result.verificationCode || null,
+                    saveStatus: "Draw created, shuffling in progress..."
                 }));
-                return;
+                
+                // Process any queued iterations once we have the drawId
+                if (iterationQueue.length > 0 && drawId) {
+                    console.log(`Processing ${iterationQueue.length} queued iterations`);
+                    // Process in sequence to maintain order
+                    for (const item of iterationQueue) {
+                        try {
+                            if (!savedIterations.has(item.iteration)) {
+                                await addIteration({
+                                    drawId,
+                                    iteration: item.iteration,
+                                    entries: item.entries
+                                });
+                                savedIterations.add(item.iteration);
+                                console.log(`Saved queued iteration ${item.iteration}`);
+                            } else {
+                                console.log(`Skipping already saved iteration ${item.iteration}`);
+                            }
+                        } catch (error) {
+                            console.error(`Error saving queued iteration ${item.iteration}:`, error);
+                        }
+                    }
+                }
+                
+                return drawId;
+            } catch (error) {
+                console.error("Error creating draw:", error);
+                setDrawState(prev => ({
+                    ...prev,
+                    saveStatus: "Failed to create draw"
+                }));
+                return null;
             }
-
-            // Update state and ref
-            drawId = result.drawId;
-            console.log("Draw created successfully with ID:", drawId);
-            drawIdRef.current = drawId;
-            setDrawState(prev => ({
-                ...prev,
-                currentDrawId: drawId,
-                verificationCode: result.verificationCode || null,
-                saveStatus: "Draw created, starting shuffling..."
-            }));
-        } catch (error) {
-            console.error("Error creating draw:", error);
-            setDrawState(prev => ({
-                ...prev,
-                saveStatus: "Failed to create draw"
-            }));
-            return;
-        }
-
-        if (!drawId) {
-            console.error("No draw ID available");
-            return;
-        }
+        })();
 
         try {
             // Process each round sequentially but with minimal delay
-            const totalRounds = drawState.diceResult;
+            const totalRounds = drawState.diceResult || 0;
             
             // Ensure totalRounds is a valid number
             if (!totalRounds || isNaN(totalRounds) || totalRounds <= 0) {
                 throw new Error("Invalid number of rounds");
             }
             
-            // Create an array to store all iterations
-            const allIterations = [{
-                iteration: 0,
-                entries: [...displayShuffled] // Initial state
-            }];
-            
+            // Start shuffling IMMEDIATELY, don't wait for database
             // Process each round one by one
             for (let i = 0; i < totalRounds; i++) {
                 // Perform the shuffle
@@ -295,16 +324,19 @@ const Draw = () => {
                     entries: [...currentShuffled]
                 };
                 
-                // Add to our local array
-                allIterations.push(iterationResult);
+                // Add to our map to prevent duplicates
+                iterationResultsMap.set(i + 1, iterationResult);
+                
+                // Convert map to array and update state
+                const allIterations = Array.from(iterationResultsMap.values())
+                    .sort((a, b) => a.iteration - b.iteration);
                 
                 // Update UI for each round
                 setDrawState(prev => ({
                     ...prev,
                     currentRound: i + 1,
                     shuffledEntries: [...currentShuffled],
-                    // Replace the entire iterationResults array to avoid state inconsistencies
-                    iterationResults: [...allIterations]
+                    iterationResults: allIterations
                 }));
                 
                 // Very minimal delay for visual feedback (far less than original 300ms)
@@ -312,15 +344,56 @@ const Draw = () => {
                     await new Promise(resolve => setTimeout(resolve, 50));
                 }
                 
-                // Save iteration to DB without waiting for response to keep things fast
-                addIteration({
-                    drawId: drawId!,
+                // Add current iteration to queue
+                iterationQueue.push({
                     iteration: i + 1,
-                    entries: currentShuffled
-                }).catch(error => {
-                    console.error(`Error saving iteration ${i + 1}:`, error);
+                    entries: [...currentShuffled]
                 });
+                
+                // If we have a draw ID, save iteration to DB without waiting for response
+                if (drawId) {
+                    if (!savedIterations.has(i + 1)) {
+                        addIteration({
+                            drawId,
+                            iteration: i + 1,
+                            entries: currentShuffled
+                        }).then(() => {
+                            savedIterations.add(i + 1);
+                            console.log(`Saved iteration ${i + 1} directly`);
+                        }).catch(error => {
+                            console.error(`Error saving iteration ${i + 1}:`, error);
+                        });
+                    } else {
+                        console.log(`Skipping already saved iteration ${i + 1}`);
+                    }
+                }
             }
+
+            // Make sure we have a drawId by the end, and process any remaining queue
+            drawId = await createDrawPromise;
+            
+            if (drawId && iterationQueue.length > 0) {
+                console.log(`Processing any remaining queued iterations (${iterationQueue.length})`);
+                // Double-check that all iterations were saved
+                for (const item of iterationQueue) {
+                    try {
+                        if (!savedIterations.has(item.iteration)) {
+                            await addIteration({
+                                drawId,
+                                iteration: item.iteration,
+                                entries: item.entries
+                            });
+                            savedIterations.add(item.iteration);
+                            console.log(`Saved remaining iteration ${item.iteration}`);
+                        } else {
+                            console.log(`Skipping already saved iteration ${item.iteration}`);
+                        }
+                    } catch (error) {
+                        console.error(`Error saving iteration ${item.iteration}:`, error);
+                    }
+                }
+            }
+            
         } catch (error) {
             console.error("Error during shuffle:", error);
             setDrawState(prev => ({
@@ -368,8 +441,8 @@ const Draw = () => {
                 currentRound: drawState.diceResult || 0,
                 isShuffling: false,
                 // Make sure selectedIteration points to the final round
-                selectedIteration: drawState.diceResult || 0,
-                showIterationResults: true
+                selectedIteration: drawState.diceResult !== null ? drawState.diceResult : 0,
+                // showIterationResults: true
             }));
         }
     }, [drawState, filteredEntries]);
@@ -865,8 +938,8 @@ const Draw = () => {
                                                                             {iter.iteration === drawState.diceResult 
                                                                                 ? `Final (Round ${iter.iteration})` 
                                                                                 : `Round ${iter.iteration}`}
-                                                                        </button>
-                                                                    ))
+                                                                            </button>
+                                                                        ))
                                                                 )}
                                                             </>
                                                         )}
