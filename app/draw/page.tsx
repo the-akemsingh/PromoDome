@@ -680,22 +680,22 @@ const Draw = () => {
 
                         {drawState.verificationCode && drawState.winners.length > 0 && (
                             <motion.div
-                                className="mt-4 p-3 bg-gray-100 rounded-lg border"
+                                className="mt-4 p-2 sm:p-3 bg-gray-100 rounded-lg border"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 transition={{ delay: 0.8 }}
                             >
-                                <div className="flex justify-between items-center text-sm">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-xs sm:text-sm">
                                     <span className="text-gray-600">Verification Code:</span>
-                                    <div className="flex items-center gap-2">
-                                        <code className="font-mono text-yellow-600">{drawState.verificationCode}</code>
+                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                        <code className="font-mono text-yellow-600 break-all">{drawState.verificationCode}</code>
                                         <button
                                             onClick={() => {
                                                 navigator.clipboard.writeText(drawState.verificationCode!);
                                                 setDrawState(prev => ({ ...prev, copied: true }));
                                                 setTimeout(() => setDrawState(prev => ({ ...prev, copied: false })), 2000);
                                             }}
-                                            className="px-2 py-0.5 bg-gray-200 rounded hover:bg-gray-300 text-black text-xs"
+                                            className="px-2 py-0.5 bg-gray-200 rounded hover:bg-gray-300 text-black text-xs whitespace-nowrap"
                                         >
                                             {drawState.copied ? "Copied!" : "Copy"}
                                         </button>
@@ -718,15 +718,16 @@ const Draw = () => {
                             className="entries-section flex-grow bg-gray-50 rounded-sm  border border-gray-200"
 
                         >
-                            <div className="section-header mb-3 flex justify-between bg-gray-300 pt-2 pb-2 px-3 items-center">
-                                <h3 className="text-sm md:text-base font-medium text-gray-800">List of Entries
-                                    <span className="text-xs ml-5 text-gray-500">
+                            <div className="section-header mb-3 flex flex-col sm:flex-row justify-between bg-gray-300 pt-2 pb-2 px-3 items-start sm:items-center gap-2 sm:gap-0">
+                                <h3 className="text-sm md:text-base font-medium text-gray-800 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-0">
+                                    List of Entries
+                                    <span className="text-xs sm:ml-5 text-gray-500">
                                         (add one entry per line up to 20,000 entries)
                                     </span>
                                 </h3>
                                 {drawState.promoStarted && (
                                     <motion.div
-                                        className="entries-count text-xs md:text-sm px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md"
+                                        className="entries-count text-xs md:text-sm px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md whitespace-nowrap"
                                         initial={{ scale: 0 }}
                                         animate={{ scale: 1 }}
                                         transition={{ type: "spring", stiffness: 300, damping: 15 }}
@@ -907,9 +908,9 @@ const Draw = () => {
                                 )}
                             </AnimatePresence>
 
-                            <div className="flex justify-between min-h-8  bg-gray-200 pt-2 text-gray-500 px-2">
-                                <div className='flex items-center gap-16'>
-                                    <span className='font-bold pb-1 text-black'># of Entries: {drawState.promoStarted ? drawState.shuffledEntries.length : validEntriesCount}</span>
+                            <div className="flex flex-col sm:flex-row justify-between min-h-8 bg-gray-200 pt-2 text-gray-500 px-2">
+                                <div className='flex flex-wrap items-center gap-4 sm:gap-8 md:gap-16'>
+                                    <span className='font-bold pb-1 text-black text-sm sm:text-base'># of Entries: {drawState.promoStarted ? drawState.shuffledEntries.length : validEntriesCount}</span>
                                     <motion.div
                                         className="rounds-display text-xs md:text-sm px-2 py-1 font-bold text-black rounded-md"
                                         initial={{ scale: 1 }}
@@ -925,21 +926,21 @@ const Draw = () => {
                                     </motion.div>
                                     {drawState.verificationCode && drawState.winners.length > 0 && (
                                         <motion.div
-                                            className=""
+                                            className="w-full sm:w-auto"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             transition={{ delay: 0.8 }}
                                         >
-                                            <div className="flex justify-between gap-3 items-center text-sm">
+                                            <div className="flex flex-wrap justify-between gap-2 sm:gap-3 items-center text-xs sm:text-sm">
                                                 <span className="text-black font-bold">Verification Code:</span>
                                                 <div className="flex items-center gap-2">
-                                                    <code className="font-mono text-yellow-600">{drawState.verificationCode}</code>
+                                                    <code className="font-mono text-yellow-600 break-all">{drawState.verificationCode}</code>
                                                 </div>
                                             </div>
                                         </motion.div>
                                     )}
                                 </div>
-                                <span className='text-xs'>
+                                <span className='text-xs mt-2 sm:mt-0'>
                                     {currentTime.toLocaleString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
