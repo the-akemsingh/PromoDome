@@ -1,6 +1,7 @@
 "use server"
 import prisma from "@/prismaClient"
 import { v4 as uuidv4 } from 'uuid'
+import { cleanupOldData } from './cleanupData'
 
 interface ShuffleIteration {
   iteration: number;
@@ -247,6 +248,11 @@ export async function addDraw({
         });
       }).filter(Boolean)
     );
+
+    // Run the cleanup function to remove old data (45+ days)
+    cleanupOldData().catch(error => {
+      console.error("Error during data cleanup:", error);
+    });
 
     return { 
       success: true, 

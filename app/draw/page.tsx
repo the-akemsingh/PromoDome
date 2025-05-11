@@ -788,7 +788,7 @@ const Draw = () => {
 
                         {/* Entries text area */}
                         <motion.div
-                            className="entries-section flex-grow bg-gray-50 rounded-sm  border border-gray-200"
+                            className="entries-section flex-grow bg-gray-50 rounded-sm  border border-black"
 
                         >
                             <div className="section-header mb-3 flex flex-col sm:flex-row justify-between bg-gray-300 pt-2 pb-2 px-3 items-start sm:items-center gap-2 sm:gap-0">
