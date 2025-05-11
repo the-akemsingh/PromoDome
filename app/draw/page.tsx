@@ -20,7 +20,7 @@ const Draw = () => {
         shuffledEntries: [] as string[],
         winner: null as string | null,
         promoStarted: false,
-        diceCount: 1,
+        diceCount: 2,
         currentRound: 0,
         usingQuantum: true,
         shuffleError: null as string | null,
